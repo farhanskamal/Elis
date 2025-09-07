@@ -1,0 +1,215 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  LIBRARIAN
+  VOLUNTEER
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+  CANNOT_COMPLETE
+}
+
+model User {
+  id              String  @id @default(cuid())
+  name            String
+  email           String  @unique
+  password        String
+  role            Role
+  profilePicture  String?
+  backgroundColor String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  volunteerLogs     VolunteerLog[]
+  magazineLogs      MagazineLog[]
+  announcements     Announcement[]
+  assignedTasks     TaskAssignment[]
+  taskStatuses      TaskStatusRecord[]
+  shifts            ShiftAssignment[]
+  auditActorLogs    AuditLog[]        @relation("AuditActor")
+  auditTargetLogs   AuditLog[]        @relation("AuditTarget")
+
+  @@map("users")
+}
+
+model Shift {
+  id        String   @id @default(cuid())
+  date      String   // YYYY-MM-DD
+  period    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  assignments ShiftAssignment[]
+
+  @@unique([date, period])
+  @@map("shifts")
+}
+
+model ShiftAssignment {
+  id         String @id @default(cuid())
+  shiftId    String
+  volunteerId String
+  shift      Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  volunteer  User   @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftId, volunteerId])
+  @@map("shift_assignments")
+}
+
+model Magazine {
+  id    String @id @default(cuid())
+  title String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  logs MagazineLog[]
+
+  @@map("magazines")
+}
+
+model MagazineLog {
+  id                String   @id @default(cuid())
+  magazineId        String
+  weekIdentifier    String   // e.g., "2024-W29"
+  checkedByVolunteerId String
+  timestamp         DateTime @default(now())
+  magazine          Magazine @relation(fields: [magazineId], references: [id], onDelete: Cascade)
+  checkedByVolunteer User    @relation(fields: [checkedByVolunteerId], references: [id], onDelete: Cascade)
+
+  @@unique([magazineId, weekIdentifier])
+  @@map("magazine_logs")
+}
+
+model VolunteerLog {
+  id              String   @id @default(cuid())
+  volunteerId     String
+  volunteerName   String
+  date            String   // YYYY-MM-DD
+  period          Int
+  checkIn         String?  // HH:mm
+  checkOut        String?  // HH:mm
+  durationMinutes Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  volunteer User @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+
+  @@unique([volunteerId, date, period])
+  @@map("volunteer_logs")
+}
+
+model Announcement {
+  id        String    @id @default(cuid())
+  title     String
+  content   String
+  authorId  String
+  authorName String
+  imageUrl  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("announcements")
+}
+
+model Task {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  priority    TaskPriority
+  dueDate     String        // YYYY-MM-DD
+  dueTime     String?       // HH:mm
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  assignments TaskAssignment[]
+  statuses    TaskStatusRecord[]
+
+  @@map("tasks")
+}
+
+model TaskAssignment {
+  id        String @id @default(cuid())
+  taskId    String
+  volunteerId String
+  task      Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  volunteer User @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, volunteerId])
+  @@map("task_assignments")
+}
+
+model TaskStatusRecord {
+  id          String    @id @default(cuid())
+  taskId      String
+  volunteerId String
+  status      TaskStatus
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  task      Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  volunteer User @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, volunteerId])
+  @@map("task_statuses")
+}
+
+model PeriodDefinition {
+  id         String @id @default(cuid())
+  period     Int    @unique
+  duration   Int    // in minutes
+  startTime  String // HH:mm
+  endTime    String // HH:mm
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("period_definitions")
+}
+
+model CheckinCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@map("checkin_codes")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String
+  targetUserId String?
+  action       String
+  details      String?
+  createdAt    DateTime @default(now())
+
+  actor        User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  targetUser   User?    @relation("AuditTarget", fields: [targetUserId], references: [id])
+
+  @@index([createdAt])
+  @@map("audit_logs")
+}
