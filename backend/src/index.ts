@@ -21,6 +21,7 @@ import notificationRoutes from './routes/notifications';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1); // Trust only the immediate proxy (Cloudflare) for accurate IP detection with rate limiting
 const PORT = process.env.PORT || 3001;
 
 // Rate limiting
@@ -39,10 +40,11 @@ if (process.env.NODE_ENV === 'production') {
   app.use(limiter);
 }
 // CORS configuration with dynamic origin allowlist
-const localOrigins = ['http://localhost:5173', 'http://localhost:3000'];
+const localOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'];
 const envOrigins = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 const defaultProdOrigins = [
   'https://elis-1.onrender.com',
+  'https://letstestit.me',
 ];
 
 const allowedOrigins = process.env.NODE_ENV === 'production'

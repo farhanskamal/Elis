@@ -3,7 +3,7 @@ credentials-file: C:\Users\Mafius\.cloudflared\75633391-cc4c-4bd4-bea3-53780d8cc
 
 ingress:
   - hostname: letstestit.me
-    service: http://localhost:80
+    service: http://localhost:5174
   - hostname: api.letstestit.me
     service: http://localhost:3001
   - service: http_status:404
