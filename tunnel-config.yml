@@ -1,0 +1,9 @@
+tunnel: 75633391-cc4c-4bd4-bea3-53780d8ccd43
+credentials-file: C:\Users\Mafius\.cloudflared\75633391-cc4c-4bd4-bea3-53780d8ccd43.json
+
+ingress:
+  - hostname: letstestit.me
+    service: http://localhost:80
+  - hostname: api.letstestit.me
+    service: http://localhost:3001
+  - service: http_status:404

@@ -1,0 +1,8 @@
+:80 {
+	encode gzip zstd
+	root * "C:\Users\Mafius\Documents\Projects\Personal\Elis\dist"
+	file_server
+	handle_path /api/* {
+		reverse_proxy 127.0.0.1:3001
+	}
+}
