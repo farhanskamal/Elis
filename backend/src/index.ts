@@ -29,7 +29,8 @@ const limiter = rateLimit({
   max: process.env.NODE_ENV === 'production' ? 100 : 0, // disable in dev
   standardHeaders: true,
   legacyHeaders: false,
-  message: 'Too many requests from this IP, please try again later.'
+  message: 'Too many requests from this IP, please try again later.',
+  skip: (req) => req.method === 'OPTIONS'
 });
 
 // Middleware
@@ -48,7 +49,7 @@ const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [...defaultProdOrigins, ...envOrigins]
   : localOrigins;
 
-app.use(cors({
+const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     if (!origin) {
       // Allow non-browser or same-origin requests
@@ -60,17 +61,26 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Allow common hosting domains (Render/Vercel) for your deployments
-    const renderMatch = /\.onrender\.com$/.test(new URL(origin).hostname);
-    const vercelMatch = /\.vercel\.app$/.test(new URL(origin).hostname);
-    if (renderMatch || vercelMatch) {
-      return callback(null, true);
+    try {
+      const hostname = new URL(origin).hostname;
+      const renderMatch = /\.onrender\.com$/.test(hostname);
+      const vercelMatch = /\.vercel\.app$/.test(hostname);
+      if (renderMatch || vercelMatch) {
+        return callback(null, true);
+      }
+    } catch (_) {
+      // fallthrough to reject
     }
 
     return callback(new Error(`CORS not allowed from origin: ${origin}`));
   },
-  credentials: true
-}));
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+// Explicitly handle preflight requests
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true }));
 
