@@ -37,10 +37,38 @@ app.use(helmet());
 if (process.env.NODE_ENV === 'production') {
   app.use(limiter);
 }
+// CORS configuration with dynamic origin allowlist
+const localOrigins = ['http://localhost:5173', 'http://localhost:3000'];
+const envOrigins = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+const defaultProdOrigins = [
+  'https://elis-1.onrender.com',
+];
+
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [...defaultProdOrigins, ...envOrigins]
+  : localOrigins;
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com'] 
-    : ['http://localhost:5173', 'http://localhost:3000'],
+  origin: (origin, callback) => {
+    if (!origin) {
+      // Allow non-browser or same-origin requests
+      return callback(null, true);
+    }
+
+    // Exact matches from allowlist
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow common hosting domains (Render/Vercel) for your deployments
+    const renderMatch = /\.onrender\.com$/.test(new URL(origin).hostname);
+    const vercelMatch = /\.vercel\.app$/.test(new URL(origin).hostname);
+    if (renderMatch || vercelMatch) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS not allowed from origin: ${origin}`));
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '25mb' }));
