@@ -115,19 +115,24 @@ const ScheduleView: React.FC = () => {
     
     const handleUpdateShift = async () => {
         if (!selectedShift) return;
-        const volunteerIds = Array.from(assignedVolunteers);
-        
-        if (selectedShift.id.startsWith('new-')) {
-            if (volunteerIds.length > 0) {
-                 await api.createShift(selectedShift.date, selectedShift.period, volunteerIds);
-            }
-        } else {
-             await api.updateShift(selectedShift.id, volunteerIds);
-        }
+        const volunteerIds: string[] = Array.from(assignedVolunteers);
 
-        setIsAssignModalOpen(false);
-        setSelectedShift(null);
-        fetchShifts(); // Refetch to show changes
+        try {
+            if (selectedShift.id.startsWith('new-')) {
+                if (volunteerIds.length > 0) {
+                     await api.createShift(selectedShift.date, selectedShift.period, volunteerIds);
+                }
+            } else {
+                 await api.updateShift(selectedShift.id, volunteerIds);
+            }
+
+            setIsAssignModalOpen(false);
+            setSelectedShift(null);
+            fetchShifts(); // Refetch to show changes
+        } catch (error) {
+            console.error('Failed to update shift:', error);
+            alert('Failed to update shift. Please try again.');
+        }
     };
 
     const handleVolunteerSelection = (volunteerId: string) => {
@@ -147,9 +152,14 @@ const ScheduleView: React.FC = () => {
     };
 
     const handleSaveDefinitions = async () => {
-        await api.updatePeriodDefinitions(editedPeriodDefinitions);
-        setPeriodDefinitions(editedPeriodDefinitions);
-        setIsDefinitionModalOpen(false);
+        try {
+            await api.updatePeriodDefinitions(editedPeriodDefinitions);
+            setPeriodDefinitions(editedPeriodDefinitions);
+            setIsDefinitionModalOpen(false);
+        } catch (error) {
+            console.error('Failed to save period definitions:', error);
+            alert('Failed to save period definitions. Please try again.');
+        }
     };
     
     const handleOpenDefinitionModal = () => {

@@ -20,14 +20,23 @@ const UserManagement: React.FC = () => {
 
     const fetchVolunteers = async () => {
         setLoading(true);
-        const data = await api.getAllUsers();
-        setVolunteers(data);
-        setLoading(false);
+        try {
+            const data = await api.getAllUsers();
+            setVolunteers(data);
+        } catch (error) {
+            console.error('Failed to fetch volunteers:', error);
+            // You could set an error state here if needed
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
         if (user?.role === Role.Librarian) {
             fetchVolunteers();
+        } else if (user) {
+            // If user is logged in but not a librarian, stop loading
+            setLoading(false);
         }
     }, [user]);
 
