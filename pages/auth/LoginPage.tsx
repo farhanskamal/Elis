@@ -29,10 +29,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ initialError }) => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
         <div className="text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 mx-auto text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3.5a1 1 0 00.002 1.84L9 9.583V14.5a1 1 0 00.553.894l2 1a1 1 0 00.894 0l2-1A1 1 0 0015 14.5V9.582l6.29-3.145a1 1 0 00.002-1.84l-7-3.5z" />
-                <path d="M10 16.5a1 1 0 00.553-.894V11.586l-1.553.776a1 1 0 000 1.788l1.553.776zM10 18.5a1 1 0 00.553-.894v-2.585l-1.553.776a1 1 0 000 1.788l1.553.776z" />
-            </svg>
+            <img src="/TaehsLibraryLogo.png" alt="Library Logo" className="w-16 h-16 mx-auto" />
           <h1 className="mt-4 text-3xl font-extrabold text-gray-900">
             Library Volunteer Hub
           </h1>

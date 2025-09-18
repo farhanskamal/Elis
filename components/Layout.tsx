@@ -64,7 +64,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveView }) 
         <aside className={`fixed top-0 left-0 z-40 w-64 h-screen transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} sm:translate-x-0 bg-white shadow-md`}>
             <div className="h-full px-3 py-4 overflow-y-auto">
                 <a href="#" className="flex items-center pl-2.5 mb-5">
-                    <span className="self-center text-xl font-semibold whitespace-nowrap" style={{ color: 'var(--color-primary)' }}>Library Hub</span>
+                    <img src="/TaehsLibraryLogo.png" alt="Library Logo" className="h-8 w-auto" />
                 </a>
                 <ul className="space-y-2">
                     {navLinks.map(link => (
