@@ -3,9 +3,9 @@ import { User, Role, Shift, Magazine, VolunteerLog, Announcement, Task, TaskPrio
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 class ApiService {
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}, retries: number = 3): Promise<T> {
     const token = localStorage.getItem('authToken');
-    
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -15,14 +15,30 @@ class ApiService {
       ...options,
     };
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Network error' }));
-      throw new Error(error.error || `HTTP ${response.status}`);
-    }
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
-    return response.json();
+      if (response.status === 429 && retries > 0) {
+        // Exponential backoff: wait 1s, 2s, 4s...
+        const delay = Math.pow(2, 4 - retries) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.request<T>(endpoint, options, retries - 1);
+      }
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Network error' }));
+        throw new Error(error.error || `HTTP ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      if (retries > 0 && (error as Error).message.includes('429')) {
+        const delay = Math.pow(2, 4 - retries) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.request<T>(endpoint, options, retries - 1);
+      }
+      throw error;
+    }
   }
 
   // --- AUTH ---

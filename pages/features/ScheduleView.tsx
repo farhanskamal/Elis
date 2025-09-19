@@ -86,13 +86,29 @@ const ScheduleView: React.FC = () => {
 
     const getVolunteerNamesFromShift = (volunteerIds: string[], shiftObj?: any) => {
         if (volunteerIds.length === 0) return <span className="text-gray-400">Open</span>;
-        const fromShift: Record<string, string> = {};
+
+        // Use volunteer names from shift data if available
         if (shiftObj && Array.isArray(shiftObj.volunteers)) {
-            for (const v of shiftObj.volunteers) {
-                if (v && v.id && v.name) fromShift[v.id] = v.name;
+            const names = shiftObj.volunteers
+                .filter((v: any) => v && v.name)
+                .map((v: any) => v.name);
+
+            if (names.length > 0) {
+                if (names.length > 2) {
+                    return `${names.slice(0, 2).join(', ')} & ${names.length - 2} more`;
+                }
+                return names.join(', ');
             }
         }
-        const names = volunteerIds.map(id => fromShift[id] || volunteers.find(v => v.id === id)?.name || 'Unknown');
+
+        // Fallback: try to find names in volunteers array (for librarians) or current user
+        const names = volunteerIds.map(id => {
+            const volunteer = volunteers.find(v => v.id === id);
+            if (volunteer) return volunteer.name;
+            if (user && user.id === id) return user.name;
+            return 'Unknown';
+        });
+
         if (names.length > 2) {
             return `${names.slice(0, 2).join(', ')} & ${names.length - 2} more`;
         }

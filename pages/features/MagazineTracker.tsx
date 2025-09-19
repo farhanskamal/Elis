@@ -82,7 +82,7 @@ const MagazineTracker: React.FC = () => {
 
         if (isChecked) {
              if (existingLog) return; // Already checked
-            await api.logMagazineCheck(magazineId, weekIdentifier, user.id);
+            await api.logMagazineCheck(magazineId, weekIdentifier);
         } else {
             if (!existingLog) return;
             // Permission check for unchecking
@@ -114,10 +114,19 @@ const MagazineTracker: React.FC = () => {
         const candidateLogs = magazineLogs.filter(l => l.magazineId === magazineId && l.weekIdentifier === weekIdentifier);
         const log: any = candidateLogs[0];
         if (!log) return null;
-        // Prefer name from backend include, fallback to local lists
-        const includedName = log.checkedByVolunteer?.name as string | undefined;
-        const volunteer = [...allVolunteers, user].find(v => v?.id === log.checkedByVolunteerId);
-        const name = includedName || volunteer?.name || 'Unknown';
+
+        // Use name from backend response if available
+        let name = 'Unknown';
+        if (log.checkedByVolunteer?.name) {
+            name = log.checkedByVolunteer.name;
+        } else {
+            // Fallback: try to find name in allVolunteers array or current user
+            const volunteer = [...allVolunteers, user].find(v => v?.id === log.checkedByVolunteerId);
+            if (volunteer?.name) {
+                name = volunteer.name;
+            }
+        }
+
         return {
             checked: true,
             log,
@@ -139,12 +148,23 @@ const MagazineTracker: React.FC = () => {
             weeksInMonth.forEach(week => {
                 const log = magazineLogs.find(l => l.magazineId === mag.id && l.weekIdentifier === week.identifier);
                 if (log) {
-                    const volunteer = [...allVolunteers, user].find(v => v?.id === log.checkedByVolunteerId);
+                    // Use name from backend response if available
+                    let volunteerName = 'Unknown';
+                    if (log.checkedByVolunteer?.name) {
+                        volunteerName = log.checkedByVolunteer.name;
+                    } else {
+                        // Fallback: try to find name in allVolunteers array or current user
+                        const volunteer = [...allVolunteers, user].find(v => v?.id === log.checkedByVolunteerId);
+                        if (volunteer?.name) {
+                            volunteerName = volunteer.name;
+                        }
+                    }
+
                     // Ensure values with commas are wrapped in quotes
                     const rowData = [
                         `"${mag.title.replace(/"/g, '""')}"`,
                         week.identifier,
-                        `"${(volunteer?.name || 'Unknown').replace(/"/g, '""')}"`,
+                        `"${volunteerName.replace(/"/g, '""')}"`,
                         new Date(log.timestamp).toLocaleString()
                     ];
                     rows.push(rowData.join(','));

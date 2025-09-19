@@ -49,10 +49,12 @@ const defaultProdOrigins = [
 
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [...defaultProdOrigins, ...envOrigins]
-  : localOrigins;
+  : [...localOrigins, 'https://letstestit.me']; // Allow production origin in dev for testing
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
+    console.log('CORS Origin received:', origin);
+    console.log('Allowed origins:', allowedOrigins);
     if (!origin) {
       // Allow non-browser or same-origin requests
       return callback(null, true);
@@ -60,6 +62,7 @@ const corsOptions: cors.CorsOptions = {
 
     // Exact matches from allowlist
     if (allowedOrigins.includes(origin)) {
+      console.log('Origin allowed:', origin);
       return callback(null, true);
     }
 
@@ -68,12 +71,14 @@ const corsOptions: cors.CorsOptions = {
       const renderMatch = /\.onrender\.com$/.test(hostname);
       const vercelMatch = /\.vercel\.app$/.test(hostname);
       if (renderMatch || vercelMatch) {
+        console.log('Origin allowed via regex:', origin);
         return callback(null, true);
       }
     } catch (_) {
       // fallthrough to reject
     }
 
+    console.log('Origin rejected:', origin);
     return callback(new Error(`CORS not allowed from origin: ${origin}`));
   },
   credentials: true,
