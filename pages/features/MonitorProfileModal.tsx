@@ -4,15 +4,15 @@ import { User, Task, TaskStatus, MagazineLog, Magazine } from '../../types';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
-import VolunteerHours from './VolunteerHours';
+import MonitorHours from './MonitorHours';
 
 interface Props {
-    volunteer: User;
+    monitor: User;
     onClose: () => void;
     onUpdate: () => void;
 }
 
-const VolunteerProfileModal: React.FC<Props> = ({ volunteer, onClose, onUpdate }) => {
+const MonitorProfileModal: React.FC<Props> = ({ monitor, onClose, onUpdate }) => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [magazineLogs, setMagazineLogs] = useState<MagazineLog[]>([]);
     const [magazines, setMagazines] = useState<Magazine[]>([]);
@@ -22,17 +22,17 @@ const VolunteerProfileModal: React.FC<Props> = ({ volunteer, onClose, onUpdate }
         const fetchData = async () => {
             setLoading(true);
             const [taskData, magLogData, magData] = await Promise.all([
-                 api.getTasksForVolunteer(volunteer.id),
+                 api.getTasksForMonitor(monitor.id),
                  api.getMagazineLogs(),
                  api.getMagazines(),
             ]);
             setTasks(taskData);
-            setMagazineLogs(magLogData.filter((log: any) => log.checkedByVolunteerId === volunteer.id));
+            setMagazineLogs(magLogData.filter((log: any) => log.checkedByVolunteerId === monitor.id));
             setMagazines(magData);
             setLoading(false);
         };
         fetchData();
-    }, [volunteer]);
+    }, [monitor]);
     
     const statusColors = {
         [TaskStatus.Pending]: 'text-yellow-600',
@@ -48,10 +48,10 @@ const VolunteerProfileModal: React.FC<Props> = ({ volunteer, onClose, onUpdate }
                 </button>
 
                 <div className="flex items-center space-x-4 mb-6">
-                    <img src={volunteer.profilePicture} alt={volunteer.name} className="h-20 w-20 rounded-full"/>
+                    <img src={monitor.profilePicture} alt={monitor.name} className="h-20 w-20 rounded-full"/>
                     <div>
-                        <h2 className="text-2xl font-bold">{volunteer.name}</h2>
-                        <p className="text-gray-600">{volunteer.email}</p>
+                        <h2 className="text-2xl font-bold">{monitor.name}</h2>
+                        <p className="text-gray-600">{monitor.email}</p>
                     </div>
                 </div>
 
@@ -64,12 +64,12 @@ const VolunteerProfileModal: React.FC<Props> = ({ volunteer, onClose, onUpdate }
                             {loading ? <Spinner /> : (
                                 <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
                                     {tasks.length > 0 ? tasks.map(task => {
-                                        const volunteerStatus = task.statuses.find(s => s.volunteerId === volunteer.id)?.status || TaskStatus.Pending;
+                                        const monitorStatus = task.statuses.find(s => s.monitorId === monitor.id)?.status || TaskStatus.Pending;
                                         return (
                                             <div key={task.id} className="text-sm p-2 bg-gray-50 rounded">
                                                 <div className="flex justify-between">
                                                     <p className="font-medium">{task.title}</p>
-                                                    <p className={`text-xs font-bold ${statusColors[volunteerStatus]}`}>{volunteerStatus}</p>
+                                                    <p className={`text-xs font-bold ${statusColors[monitorStatus]}`}>{monitorStatus}</p>
                                                 </div>
                                                 <p className="text-xs text-gray-500">Due: {task.dueDate}</p>
                                             </div>
@@ -101,7 +101,7 @@ const VolunteerProfileModal: React.FC<Props> = ({ volunteer, onClose, onUpdate }
                     <div>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">Hour Log</h3>
                         <div className="max-h-96 overflow-y-auto pr-2">
-                            <VolunteerHours volunteerId={volunteer.id} />
+                            <MonitorHours monitorId={monitor.id} />
                         </div>
                     </div>
                 </div>
@@ -114,4 +114,4 @@ const VolunteerProfileModal: React.FC<Props> = ({ volunteer, onClose, onUpdate }
     );
 };
 
-export default VolunteerProfileModal;
+export default MonitorProfileModal;

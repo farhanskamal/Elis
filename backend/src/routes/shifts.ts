@@ -22,7 +22,7 @@ router.get('/week/:startDate', authenticateToken, async (req, res) => {
       include: {
         assignments: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -40,8 +40,8 @@ router.get('/week/:startDate', authenticateToken, async (req, res) => {
       id: shift.id,
       date: shift.date,
       period: shift.period,
-      volunteerIds: shift.assignments.map(a => a.volunteer.id),
-      volunteers: shift.assignments.map(a => a.volunteer)
+      monitorIds: shift.assignments.map(a => a.monitor.id),
+      monitors: shift.assignments.map(a => a.monitor)
     }));
 
     res.json(transformedShifts);
@@ -54,10 +54,10 @@ router.get('/week/:startDate', authenticateToken, async (req, res) => {
 // Create shift (librarian only)
 router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {
-    const { date, period, volunteerIds } = req.body;
+    const { date, period, monitorIds } = req.body;
 
-    if (!date || !period || !Array.isArray(volunteerIds)) {
-      return res.status(400).json({ error: 'Date, period, and volunteerIds are required' });
+    if (!date || !period || !Array.isArray(monitorIds)) {
+      return res.status(400).json({ error: 'Date, period, and monitorIds are required' });
     }
 
     // Check if shift already exists for this date and period
@@ -74,16 +74,16 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
       return res.status(400).json({ error: 'Shift already exists for this date and period' });
     }
 
-    // Verify all volunteers exist
-    const volunteers = await prisma.user.findMany({
+    // Verify all monitors exist
+    const monitors = await prisma.user.findMany({
       where: {
-        id: { in: volunteerIds },
-        role: 'VOLUNTEER'
+        id: { in: monitorIds },
+        role: 'MONITOR'
       }
     });
 
-    if (volunteers.length !== volunteerIds.length) {
-      return res.status(400).json({ error: 'One or more volunteers not found' });
+    if (monitors.length !== monitorIds.length) {
+      return res.status(400).json({ error: 'One or more monitors not found' });
     }
 
     // Create shift with assignments
@@ -92,15 +92,15 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
         date,
         period,
         assignments: {
-          create: volunteerIds.map((volunteerId: string) => ({
-            volunteerId
+          create: monitorIds.map((monitorId: string) => ({
+            monitorId: monitorId
           }))
         }
       },
       include: {
         assignments: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -118,8 +118,8 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
       id: shift.id,
       date: shift.date,
       period: shift.period,
-      volunteerIds: shift.assignments.map(a => a.volunteer.id),
-      volunteers: shift.assignments.map(a => a.volunteer)
+      monitorIds: shift.assignments.map(a => a.monitor.id),
+      monitors: shift.assignments.map(a => a.monitor)
     };
 
     res.status(201).json(transformedShift);
@@ -133,10 +133,10 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
 router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {
     const { id } = req.params;
-    const { volunteerIds } = req.body;
+    const { monitorIds } = req.body;
 
-    if (!Array.isArray(volunteerIds)) {
-      return res.status(400).json({ error: 'volunteerIds must be an array' });
+    if (!Array.isArray(monitorIds)) {
+      return res.status(400).json({ error: 'monitorIds must be an array' });
     }
 
     // Check if shift exists
@@ -148,20 +148,20 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
       return res.status(404).json({ error: 'Shift not found' });
     }
 
-    // Verify all volunteers exist
-    const volunteers = await prisma.user.findMany({
+    // Verify all monitors exist
+    const monitors = await prisma.user.findMany({
       where: {
-        id: { in: volunteerIds },
-        role: 'VOLUNTEER'
+        id: { in: monitorIds },
+        role: 'MONITOR'
       }
     });
 
-    if (volunteers.length !== volunteerIds.length) {
-      return res.status(400).json({ error: 'One or more volunteers not found' });
+    if (monitors.length !== monitorIds.length) {
+      return res.status(400).json({ error: 'One or more monitors not found' });
     }
 
-    // If no volunteers remain, delete the shift entirely
-    if (volunteerIds.length === 0) {
+    // If no monitors remain, delete the shift entirely
+    if (monitorIds.length === 0) {
       await prisma.shift.delete({ where: { id } });
       return res.json({ success: true, deleted: true });
     }
@@ -169,7 +169,7 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
     // Update shift assignments
     await prisma.shiftAssignment.deleteMany({ where: { shiftId: id } });
     await prisma.shiftAssignment.createMany({
-      data: volunteerIds.map((volunteerId: string) => ({ shiftId: id, volunteerId }))
+      data: monitorIds.map((monitorId: string) => ({ shiftId: id, monitorId: monitorId }))
     });
 
     // Get updated shift
@@ -178,7 +178,7 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
       include: {
         assignments: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -196,8 +196,8 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
       id: updatedShift!.id,
       date: updatedShift!.date,
       period: updatedShift!.period,
-      volunteerIds: updatedShift!.assignments.map(a => a.volunteer.id),
-      volunteers: updatedShift!.assignments.map(a => a.volunteer)
+      monitorIds: updatedShift!.assignments.map(a => a.monitor.id),
+      monitors: updatedShift!.assignments.map(a => a.monitor)
     };
 
     res.json(transformedShift);

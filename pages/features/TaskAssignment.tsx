@@ -7,7 +7,7 @@ import Spinner from '../../components/ui/Spinner';
 
 const TaskAssignment: React.FC = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [volunteers, setVolunteers] = useState<User[]>([]);
+    const [monitors, setMonitors] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -24,7 +24,7 @@ const TaskAssignment: React.FC = () => {
             setLoading(true);
             const [taskData, userData] = await Promise.all([api.getTasks(), api.getAllUsers()]);
             setTasks(taskData);
-            setVolunteers(userData.filter(u => u.role === 'VOLUNTEER'));
+            setMonitors(userData.filter(u => u.role === 'MONITOR'));
         } catch (e) {
             console.error('Failed to load tasks/users', e);
         } finally {
@@ -77,14 +77,14 @@ const TaskAssignment: React.FC = () => {
         fetchData(); // Refresh list
     };
     
-    const getVolunteerNames = (ids: string[]) => {
-        if(ids.length === volunteers.length) return "All Volunteers";
-        return ids.map(id => volunteers.find(v => v.id === id)?.name).join(', ');
+    const getMonitorNames = (ids: string[]) => {
+        if(ids.length === monitors.length) return "All Monitors";
+        return ids.map(id => monitors.find(m => m.id === id)?.name).join(', ');
     };
     
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if(e.target.checked) {
-            setAssignedTo(volunteers.map(v => v.id));
+            setAssignedTo(monitors.map(m => m.id));
         } else {
             setAssignedTo([]);
         }
@@ -132,24 +132,24 @@ const TaskAssignment: React.FC = () => {
                             <label className="text-sm font-medium">Assign To</label>
                             <div className="mt-2 p-2 border rounded-md max-h-40 overflow-y-auto space-y-2">
                                 <label className="flex items-center space-x-2">
-                                    <input type="checkbox" onChange={handleSelectAll} checked={assignedTo.length === volunteers.length && volunteers.length > 0} />
+                                    <input type="checkbox" onChange={handleSelectAll} checked={assignedTo.length === monitors.length && monitors.length > 0} />
                                     <span>Assign to All</span>
                                 </label>
-                                {volunteers.map(v => (
-                                    <label key={v.id} className="flex items-center space-x-2">
+                                {monitors.map(m => (
+                                    <label key={m.id} className="flex items-center space-x-2">
                                         <input 
                                             type="checkbox" 
-                                            value={v.id}
-                                            checked={assignedTo.includes(v.id)}
+                                            value={m.id}
+                                            checked={assignedTo.includes(m.id)}
                                             onChange={e => {
                                                 if (e.target.checked) {
-                                                    setAssignedTo([...assignedTo, v.id]);
+                                                    setAssignedTo([...assignedTo, m.id]);
                                                 } else {
-                                                    setAssignedTo(assignedTo.filter(id => id !== v.id));
+                                                    setAssignedTo(assignedTo.filter(id => id !== m.id));
                                                 }
                                             }}
                                         />
-                                        <span>{v.name}</span>
+                                        <span>{m.name}</span>
                                     </label>
                                 ))}
                             </div>
@@ -186,8 +186,8 @@ const TaskAssignment: React.FC = () => {
                                         <h4 className="text-sm font-semibold mt-3 mb-1">Status:</h4>
                                         <ul className="text-sm space-y-1">
                                             {task.statuses.map(s => (
-                                                <li key={s.volunteerId} className="flex justify-between items-center">
-                                                    <span>{volunteers.find(v => v.id === s.volunteerId)?.name}</span>
+                                                <li key={s.monitorId} className="flex justify-between items-center">
+                                                    <span>{monitors.find(m => m.id === s.monitorId)?.name}</span>
                                                     <span className={`px-2 py-0.5 text-xs rounded-full ${statusColors[s.status]}`}>{s.status}</span>
                                                 </li>
                                             ))}

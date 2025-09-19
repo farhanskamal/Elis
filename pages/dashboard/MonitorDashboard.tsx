@@ -2,16 +2,16 @@ import React, { useState, useContext, useEffect, useCallback } from 'react';
 import Layout from '../../components/Layout';
 import ScheduleView from '../features/ScheduleView';
 import MagazineTracker from '../features/MagazineTracker';
-import VolunteerHours from '../features/VolunteerHours';
+import MonitorHours from '../features/MonitorHours';
 import Announcements from '../features/Announcements';
-import VolunteerTasks from '../features/VolunteerTasks';
+import MonitorTasks from '../features/MonitorTasks';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../services/apiService';
 import { Announcement, Task, TaskStatus, PeriodDefinition } from '../../types';
 
-const VolunteerDashboard: React.FC = () => {
+const MonitorDashboard: React.FC = () => {
     const [activeView, setActiveView] = useState('dashboard');
     const { user } = useContext(AuthContext);
     const [totalHours, setTotalHours] = useState(0);
@@ -31,9 +31,9 @@ const VolunteerDashboard: React.FC = () => {
         if (!user) return;
         try {
             const [logs, annos, userTasks, periods] = await Promise.all([
-                api.getVolunteerLogs(user.id),
+                api.getMonitorLogs(user.id),
                 api.getAnnouncements(),
-                api.getTasksForVolunteer(user.id),
+                api.getTasksForMonitor(user.id),
                 api.getPeriodDefinitions(),
             ]);
             
@@ -46,7 +46,7 @@ const VolunteerDashboard: React.FC = () => {
             }
             
             const pendingTasks = userTasks.filter(t => {
-                const myStatus = t.statuses.find(s => s.volunteerId === user.id);
+                const myStatus = t.statuses.find(s => s.monitorId === user.id);
                 return myStatus?.status === TaskStatus.Pending;
             });
             setTasks(pendingTasks.slice(0, 3));
@@ -137,11 +137,11 @@ const VolunteerDashboard: React.FC = () => {
             case 'magazines':
                 return <MagazineTracker />;
             case 'my-hours':
-                return <VolunteerHours volunteerId={user?.id} />;
+                return <MonitorHours monitorId={user?.id} />;
             case 'announcements':
                 return <Announcements />;
             case 'my-tasks':
-                return <VolunteerTasks />;
+                return <MonitorTasks />;
             case 'dashboard':
             default:
                 return renderDashboardContent();
@@ -213,7 +213,7 @@ const VolunteerDashboard: React.FC = () => {
     );
 };
 
-export default VolunteerDashboard;
+export default MonitorDashboard;
 
 const NewspaperIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">

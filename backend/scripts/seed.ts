@@ -21,29 +21,29 @@ async function main() {
     }
   });
 
-  // Create volunteer users
-  const volunteerPassword = await bcrypt.hash('password123', 12);
-  const volunteer1 = await prisma.user.upsert({
+  // Create monitor users  
+  const monitorPassword = await bcrypt.hash('password123', 12);
+  const monitor1 = await prisma.user.upsert({
     where: { email: 'ben@student.school.edu' },
     update: {},
     create: {
       name: 'Ben Carter',
       email: 'ben@student.school.edu',
-      password: volunteerPassword,
-      role: 'VOLUNTEER',
+      password: monitorPassword,
+      role: 'MONITOR',
       profilePicture: 'https://picsum.photos/seed/ben/100/100',
       backgroundColor: '#f3f4f6'
     }
   });
 
-  const volunteer2 = await prisma.user.upsert({
+  const monitor2 = await prisma.user.upsert({
     where: { email: 'chloe@student.school.edu' },
     update: {},
     create: {
       name: 'Chloe Davis',
       email: 'chloe@student.school.edu',
-      password: volunteerPassword,
-      role: 'VOLUNTEER',
+      password: monitorPassword,
+      role: 'MONITOR',
       profilePicture: 'https://picsum.photos/seed/chloe/100/100',
       backgroundColor: '#f3f4f6'
     }
@@ -79,7 +79,7 @@ async function main() {
       period: 3,
       assignments: {
         create: {
-          volunteerId: volunteer1.id
+          monitorId: monitor1.id
         }
       }
     }
@@ -93,7 +93,7 @@ async function main() {
       period: 4,
       assignments: {
         create: {
-          volunteerId: volunteer2.id
+          monitorId: monitor2.id
         }
       }
     }
@@ -121,7 +121,7 @@ async function main() {
     create: {
       id: 'sample-announcement',
       title: 'Welcome Back!',
-      content: 'Welcome back to a new school year! We are excited to have our volunteers back in the library.',
+      content: 'Welcome back to a new school year! We are excited to have our monitors back in the library.',
       authorId: librarian.id,
       authorName: librarian.name
     }
@@ -136,14 +136,14 @@ async function main() {
       dueDate: '2024-08-15',
       assignments: {
         create: [
-          { volunteerId: volunteer1.id },
-          { volunteerId: volunteer2.id }
+          { monitorId: monitor1.id },
+          { monitorId: monitor2.id }
         ]
       },
       statuses: {
         create: [
-          { volunteerId: volunteer1.id, status: 'PENDING' },
-          { volunteerId: volunteer2.id, status: 'PENDING' }
+          { monitorId: monitor1.id, status: 'PENDING' },
+          { monitorId: monitor2.id, status: 'PENDING' }
         ]
       }
     }
@@ -157,12 +157,12 @@ async function main() {
       dueDate: '2024-08-01',
       assignments: {
         create: {
-          volunteerId: volunteer1.id
+          monitorId: monitor1.id
         }
       },
       statuses: {
         create: {
-          volunteerId: volunteer1.id,
+          monitorId: monitor1.id,
           status: 'COMPLETED',
           completedAt: new Date()
         }
@@ -170,11 +170,11 @@ async function main() {
     }
   });
 
-  // Create sample volunteer logs
-  await prisma.volunteerLog.create({
+  // Create sample monitor logs
+  await prisma.monitorLog.create({
     data: {
-      volunteerId: volunteer1.id,
-      volunteerName: volunteer1.name,
+      monitorId: monitor1.id,
+      monitorName: monitor1.name,
       date: '2024-07-22',
       period: 3,
       checkIn: '10:05',
@@ -183,10 +183,10 @@ async function main() {
     }
   });
 
-  await prisma.volunteerLog.create({
+  await prisma.monitorLog.create({
     data: {
-      volunteerId: volunteer2.id,
-      volunteerName: volunteer2.name,
+      monitorId: monitor2.id,
+      monitorName: monitor2.name,
       date: '2024-07-22',
       period: 4,
       checkIn: '11:00',

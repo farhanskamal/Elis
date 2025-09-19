@@ -8,13 +8,13 @@ import Button from '../../components/ui/Button';
 
 const ScheduleView: React.FC = () => {
     const [shifts, setShifts] = useState<Shift[]>([]);
-    const [volunteers, setVolunteers] = useState<User[]>([]);
+    const [monitors, setMonitors] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const { user } = useContext(AuthContext);
 
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
-    const [assignedVolunteers, setAssignedVolunteers] = useState<Set<string>>(new Set());
+    const [assignedMonitors, setAssignedMonitors] = useState<Set<string>>(new Set());
     
     // State for period definitions modal
     const [isDefinitionModalOpen, setIsDefinitionModalOpen] = useState(false);
@@ -64,10 +64,10 @@ const ScheduleView: React.FC = () => {
             setPeriodDefinitions(definitionData);
             try {
                 const users = await api.getAllUsers();
-                setVolunteers(users.filter(u => u.role === 'VOLUNTEER'));
+                setMonitors(users.filter(u => u.role === 'MONITOR'));
             } catch {
-                // volunteers list optional for non-admins
-                setVolunteers([]);
+                // monitors list optional for non-admins
+                setMonitors([]);
             }
         } catch (e) {
             console.error('Failed to load initial schedule data', e);
@@ -84,14 +84,14 @@ const ScheduleView: React.FC = () => {
         return shifts.find(s => s.date === date && s.period === period);
     };
 
-    const getVolunteerNamesFromShift = (volunteerIds: string[], shiftObj?: any) => {
-        if (volunteerIds.length === 0) return <span className="text-gray-400">Open</span>;
+    const getMonitorNamesFromShift = (monitorIds: string[], shiftObj?: any) => {
+        if (monitorIds.length === 0) return <span className="text-gray-400">Open</span>;
 
-        // Use volunteer names from shift data if available
-        if (shiftObj && Array.isArray(shiftObj.volunteers)) {
-            const names = shiftObj.volunteers
-                .filter((v: any) => v && v.name)
-                .map((v: any) => v.name);
+        // Use monitor names from shift data if available
+        if (shiftObj && Array.isArray(shiftObj.monitors)) {
+            const names = shiftObj.monitors
+                .filter((m: any) => m && m.name)
+                .map((m: any) => m.name);
 
             if (names.length > 0) {
                 if (names.length > 2) {
@@ -101,10 +101,10 @@ const ScheduleView: React.FC = () => {
             }
         }
 
-        // Fallback: try to find names in volunteers array (for librarians) or current user
-        const names = volunteerIds.map(id => {
-            const volunteer = volunteers.find(v => v.id === id);
-            if (volunteer) return volunteer.name;
+        // Fallback: try to find names in monitors array (for librarians) or current user
+        const names = monitorIds.map(id => {
+            const monitor = monitors.find(m => m.id === id);
+            if (monitor) return monitor.name;
             if (user && user.id === id) return user.name;
             return 'Unknown';
         });
@@ -122,24 +122,24 @@ const ScheduleView: React.FC = () => {
             id: `new-${date}-${period}`, // Temporary ID
             date,
             period,
-            volunteerIds: [],
+            monitorIds: [],
         };
         setSelectedShift(shiftToEdit);
-        setAssignedVolunteers(new Set(shiftToEdit.volunteerIds));
+        setAssignedMonitors(new Set(shiftToEdit.monitorIds));
         setIsAssignModalOpen(true);
     };
     
     const handleUpdateShift = async () => {
         if (!selectedShift) return;
-        const volunteerIds: string[] = Array.from(assignedVolunteers);
+        const monitorIds: string[] = Array.from(assignedMonitors);
 
         try {
             if (selectedShift.id.startsWith('new-')) {
-                if (volunteerIds.length > 0) {
-                     await api.createShift(selectedShift.date, selectedShift.period, volunteerIds);
+                if (monitorIds.length > 0) {
+                     await api.createShift(selectedShift.date, selectedShift.period, monitorIds);
                 }
             } else {
-                 await api.updateShift(selectedShift.id, volunteerIds);
+                 await api.updateShift(selectedShift.id, monitorIds);
             }
 
             setIsAssignModalOpen(false);
@@ -151,14 +151,14 @@ const ScheduleView: React.FC = () => {
         }
     };
 
-    const handleVolunteerSelection = (volunteerId: string) => {
-        const newSelection = new Set(assignedVolunteers);
-        if (newSelection.has(volunteerId)) {
-            newSelection.delete(volunteerId);
+    const handleMonitorSelection = (monitorId: string) => {
+        const newSelection = new Set(assignedMonitors);
+        if (newSelection.has(monitorId)) {
+            newSelection.delete(monitorId);
         } else {
-            newSelection.add(volunteerId);
+            newSelection.add(monitorId);
         }
-        setAssignedVolunteers(newSelection);
+        setAssignedMonitors(newSelection);
     };
 
     const handleDefinitionChange = (index: number, field: keyof PeriodDefinition, value: string | number) => {
@@ -243,13 +243,13 @@ const ScheduleView: React.FC = () => {
                                     </th>
                                     {weekDates.map(date => {
                                         const shift = getShiftFor(date, period) as any;
-                                        const isCurrentUserShift = shift?.volunteerIds.includes(user?.id || '');
+                                        const isCurrentUserShift = shift?.monitorIds.includes(user?.id || '');
                                         const canModify = user?.role === Role.Librarian;
                                         return (
                                             <td key={`${date}-${period}`}
                                                 onClick={() => canModify && handleCellClick(date, period)}
                                                 className={`px-4 py-3 border-l ${canModify ? 'cursor-pointer hover:bg-gray-50' : ''} ${isCurrentUserShift ? 'bg-sky-100 font-semibold text-sky-800' : 'bg-white'}`}>
-                                                {shift ? getVolunteerNamesFromShift(shift.volunteerIds, shift) : <span className="text-gray-300">-</span>}
+                                                {shift ? getMonitorNamesFromShift(shift.monitorIds, shift) : <span className="text-gray-300">-</span>}
                                             </td>
                                         );
                                     })}
@@ -263,18 +263,18 @@ const ScheduleView: React.FC = () => {
             {isAssignModalOpen && selectedShift && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
                     <Card className="w-full max-w-md">
-                        <h2 className="text-xl font-bold mb-2">Assign Volunteers</h2>
+                        <h2 className="text-xl font-bold mb-2">Assign Monitors</h2>
                         <p className="mb-4 text-gray-600">Period {selectedShift.period} on {selectedShift.date}</p>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
-                           {volunteers.map(v => (
-                               <label key={v.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
+                           {monitors.map(m => (
+                               <label key={m.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
                                    <input
                                        type="checkbox"
                                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                       checked={assignedVolunteers.has(v.id)}
-                                       onChange={() => handleVolunteerSelection(v.id)}
+                                       checked={assignedMonitors.has(m.id)}
+                                       onChange={() => handleMonitorSelection(m.id)}
                                    />
-                                   <span>{v.name}</span>
+                                   <span>{m.name}</span>
                                </label>
                            ))}
                         </div>

@@ -49,7 +49,7 @@ export const validationSchemas = {
     name: nameSchema,
     email: emailSchema,
     password: passwordSchema,
-    role: z.enum(['VOLUNTEER', 'LIBRARIAN']).optional()
+    role: z.enum(['MONITOR', 'LIBRARIAN']).optional()
   }),
 
   // User schemas
@@ -59,14 +59,14 @@ export const validationSchemas = {
     password: passwordSchema.optional(),
     profilePicture: z.string().url().max(500).optional().or(z.literal('')),
     backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-    role: z.enum(['VOLUNTEER', 'LIBRARIAN']).optional()
+    role: z.enum(['MONITOR', 'LIBRARIAN']).optional()
   }),
 
   createUser: z.object({
     name: nameSchema,
     email: emailSchema,
     password: passwordSchema,
-    role: z.enum(['VOLUNTEER', 'LIBRARIAN']).optional()
+    role: z.enum(['MONITOR', 'LIBRARIAN']).optional()
   }),
 
   // Task schemas
@@ -89,7 +89,7 @@ export const validationSchemas = {
   }),
 
   updateTaskStatus: z.object({
-    volunteerId: idSchema,
+    monitorId: idSchema,
     status: z.enum(['PENDING', 'COMPLETED', 'CANNOT_COMPLETE'])
   }),
 
@@ -97,11 +97,11 @@ export const validationSchemas = {
   createShift: z.object({
     date: dateSchema,
     period: periodSchema,
-    volunteerIds: z.array(idSchema).max(10)
+    monitorIds: z.array(idSchema).max(10)
   }),
 
   updateShift: z.object({
-    volunteerIds: z.array(idSchema).max(10)
+    monitorIds: z.array(idSchema).max(10)
   }),
 
   // Announcement schemas
@@ -126,7 +126,7 @@ export const validationSchemas = {
     weekIdentifier: z.string().regex(/^\d{4}-W\d{2}$/)
   }),
 
-  // Volunteer log schemas
+  // Monitor log schemas
   logHours: z.object({
     date: dateSchema,
     period: periodSchema,
@@ -148,7 +148,7 @@ export const validationSchemas = {
     title: z.string().min(1).max(100).trim(),
     message: z.string().min(1).max(500).trim(),
     targetUserId: idSchema.optional(),
-    targetRole: z.enum(['VOLUNTEER', 'LIBRARIAN']).optional()
+    targetRole: z.enum(['MONITOR', 'LIBRARIAN']).optional()
   })
 };
 

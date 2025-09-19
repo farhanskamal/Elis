@@ -4,29 +4,29 @@ import { authenticateToken, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
-// Get volunteer logs
+// Get monitor logs
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { volunteerId } = req.query;
+    const { monitorId } = req.query;
     const currentUserId = (req as any).user.id;
     const currentUserRole = (req as any).user.role;
 
     // If not librarian, only allow viewing own logs
-    if (currentUserRole !== 'LIBRARIAN' && volunteerId && volunteerId !== currentUserId) {
+    if (currentUserRole !== 'LIBRARIAN' && monitorId && monitorId !== currentUserId) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
     const whereClause: any = {};
-    if (volunteerId) {
-      whereClause.volunteerId = volunteerId;
+    if (monitorId) {
+      whereClause.monitorId = monitorId;
     } else if (currentUserRole !== 'LIBRARIAN') {
-      whereClause.volunteerId = currentUserId;
+      whereClause.monitorId = currentUserId;
     }
 
-    const logs = await prisma.volunteerLog.findMany({
+    const logs = await prisma.monitorLog.findMany({
       where: whereClause,
       include: {
-        volunteer: {
+        monitor: {
           select: {
             id: true,
             name: true,
@@ -39,7 +39,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     res.json(logs);
   } catch (error) {
-    console.error('Get volunteer logs error:', error);
+    console.error('Get monitor logs error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -48,7 +48,7 @@ router.get('/', authenticateToken, async (req, res) => {
 router.post('/log-hours', authenticateToken, async (req, res) => {
   try {
     const { date, period, code } = req.body;
-    const volunteerId = (req as any).user.id;
+    const monitorId = (req as any).user.id;
 
     if (!date || !period || !code) {
       return res.status(400).json({ error: 'Date, period, and code are required' });
@@ -69,10 +69,10 @@ router.post('/log-hours', authenticateToken, async (req, res) => {
     // Scheduling requirement disabled: allow logging even if not scheduled
 
     // Check if already logged
-    const existingLog = await prisma.volunteerLog.findUnique({
+    const existingLog = await prisma.monitorLog.findUnique({
       where: {
-        volunteerId_date_period: {
-          volunteerId,
+        monitorId_date_period: {
+          monitorId: monitorId,
           date,
           period
         }
@@ -83,14 +83,14 @@ router.post('/log-hours', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Hours for this period have already been logged' });
     }
 
-    // Get volunteer info
-    const volunteer = await prisma.user.findUnique({
-      where: { id: volunteerId },
+    // Get monitor info
+    const monitor = await prisma.user.findUnique({
+      where: { id: monitorId },
       select: { name: true }
     });
 
-    if (!volunteer) {
-      return res.status(404).json({ error: 'Volunteer not found' });
+    if (!monitor) {
+      return res.status(404).json({ error: 'Monitor not found' });
     }
 
     // Get period duration
@@ -100,10 +100,10 @@ router.post('/log-hours', authenticateToken, async (req, res) => {
 
     const durationMinutes = periodDefinition?.duration || 50;
 
-    const log = await prisma.volunteerLog.create({
+    const log = await prisma.monitorLog.create({
       data: {
-        volunteerId,
-        volunteerName: volunteer.name,
+        monitorId: monitorId,
+        monitorName: monitor.name,
         date,
         period,
         checkIn: 'Logged',
@@ -111,7 +111,7 @@ router.post('/log-hours', authenticateToken, async (req, res) => {
         durationMinutes
       },
       include: {
-        volunteer: {
+        monitor: {
           select: {
             id: true,
             name: true,
@@ -128,29 +128,29 @@ router.post('/log-hours', authenticateToken, async (req, res) => {
   }
 });
 
-// Update volunteer log (librarian only)
+// Update monitor log (librarian only)
 router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
 
     // Check if log exists
-    const existingLog = await prisma.volunteerLog.findUnique({
+    const existingLog = await prisma.monitorLog.findUnique({
       where: { id }
     });
 
     if (!existingLog) {
-      return res.status(404).json({ error: 'Volunteer log not found' });
+      return res.status(404).json({ error: 'Monitor log not found' });
     }
 
-    const updatedLog = await prisma.volunteerLog.update({
+    const updatedLog = await prisma.monitorLog.update({
       where: { id },
       data: {
         ...updateData,
         updatedAt: new Date()
       },
       include: {
-        volunteer: {
+        monitor: {
           select: {
             id: true,
             name: true,
@@ -162,32 +162,32 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
 
     res.json(updatedLog);
   } catch (error) {
-    console.error('Update volunteer log error:', error);
+    console.error('Update monitor log error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Delete volunteer log (librarian only)
+// Delete monitor log (librarian only)
 router.delete('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {
     const { id } = req.params;
 
     // Check if log exists
-    const existingLog = await prisma.volunteerLog.findUnique({
+    const existingLog = await prisma.monitorLog.findUnique({
       where: { id }
     });
 
     if (!existingLog) {
-      return res.status(404).json({ error: 'Volunteer log not found' });
+      return res.status(404).json({ error: 'Monitor log not found' });
     }
 
-    await prisma.volunteerLog.delete({
+    await prisma.monitorLog.delete({
       where: { id }
     });
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Delete volunteer log error:', error);
+    console.error('Delete monitor log error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

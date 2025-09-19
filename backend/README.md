@@ -1,16 +1,16 @@
-# Library Volunteer Hub - Backend
+# Library Monitor Hub - Backend
 
-This is the backend API for the Library Volunteer Hub application, built with Node.js, Express, TypeScript, and PostgreSQL with Prisma ORM.
+This is the backend API for the Library Monitor Hub application, built with Node.js, Express, TypeScript, and PostgreSQL with Prisma ORM.
 
 ## Features
 
 - **Authentication**: JWT-based authentication with role-based access control
-- **User Management**: CRUD operations for librarians and volunteers
-- **Schedule Management**: Create and manage volunteer shifts
-- **Task Assignment**: Assign and track tasks for volunteers
+- **User Management**: CRUD operations for librarians and monitors
+- **Schedule Management**: Create and manage monitor shifts
+- **Task Assignment**: Assign and track tasks for monitors
 - **Hour Tracking**: Check-in/check-out system with codes
 - **Magazine Tracking**: Log magazine check-ins by week
-- **Announcements**: Communication system between librarians and volunteers
+- **Announcements**: Communication system between librarians and monitors
 - **Period Management**: Configure school period definitions
 
 ## Prerequisites
@@ -33,7 +33,7 @@ This is the backend API for the Library Volunteer Hub application, built with No
    
    Update the `.env` file with your database credentials:
    ```
-   DATABASE_URL="postgresql://username:password@localhost:5432/library_volunteer_hub"
+   DATABASE_URL="postgresql://username:password@localhost:5432/library_monitor_hub"
    JWT_SECRET="3233b202c4138755a7f6e15277ee8e6c4077c9b8d48b17db285d4a5c02042b90"
    PORT=3001
    NODE_ENV="development"
@@ -69,7 +69,7 @@ This is the backend API for the Library Volunteer Hub application, built with No
 - `GET /api/auth/verify` - Verify JWT token
 
 ### Users
-- `GET /api/users/volunteers` - Get all volunteers
+- `GET /api/users/monitors` - Get all monitors
 - `GET /api/users/:id` - Get user by ID
 - `PUT /api/users/:id` - Update user
 - `POST /api/users` - Create user (librarian only)
@@ -83,7 +83,7 @@ This is the backend API for the Library Volunteer Hub application, built with No
 
 ### Tasks
 - `GET /api/tasks` - Get all tasks
-- `GET /api/tasks/volunteer/:volunteerId` - Get tasks for volunteer
+- `GET /api/tasks/monitor/:monitorId` - Get tasks for monitor
 - `POST /api/tasks` - Create task (librarian only)
 - `PUT /api/tasks/:id` - Update task (librarian only)
 - `PUT /api/tasks/:id/status` - Update task status
@@ -104,11 +104,11 @@ This is the backend API for the Library Volunteer Hub application, built with No
 - `POST /api/magazines/:id/log` - Log magazine check
 - `DELETE /api/magazines/:id/log/:weekIdentifier` - Remove magazine log (librarian only)
 
-### Volunteer Logs
-- `GET /api/volunteer-logs` - Get volunteer logs
-- `POST /api/volunteer-logs/log-hours` - Log hours with check-in code
-- `PUT /api/volunteer-logs/:id` - Update volunteer log (librarian only)
-- `DELETE /api/volunteer-logs/:id` - Delete volunteer log (librarian only)
+### Monitor Logs
+- `GET /api/monitor-logs` - Get monitor logs
+- `POST /api/monitor-logs/log-hours` - Log hours with check-in code
+- `PUT /api/monitor-logs/:id` - Update monitor log (librarian only)
+- `DELETE /api/monitor-logs/:id` - Delete monitor log (librarian only)
 
 ### Periods
 - `GET /api/periods` - Get period definitions
@@ -121,10 +121,10 @@ This is the backend API for the Library Volunteer Hub application, built with No
 ## Database Schema
 
 The application uses PostgreSQL with the following main entities:
-- Users (librarians and volunteers)
+- Users (librarians and monitors)
 - Shifts and Shift Assignments
 - Tasks and Task Assignments/Statuses
-- Volunteer Logs
+- Monitor Logs
 - Magazines and Magazine Logs
 - Announcements
 - Period Definitions

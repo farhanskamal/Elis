@@ -11,7 +11,7 @@ router.get('/', authenticateToken, async (req, res) => {
       include: {
         assignments: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -23,7 +23,7 @@ router.get('/', authenticateToken, async (req, res) => {
         },
         statuses: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -44,9 +44,9 @@ router.get('/', authenticateToken, async (req, res) => {
       priority: task.priority,
       dueDate: task.dueDate,
       dueTime: task.dueTime,
-      assignedTo: task.assignments.map(a => a.volunteer.id),
+      assignedTo: task.assignments.map(a => a.monitor.id),
       statuses: task.statuses.map(s => ({
-        volunteerId: s.volunteer.id,
+        monitorId: s.monitor.id,
         status: s.status,
         completedAt: s.completedAt
       })),
@@ -61,15 +61,15 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Get tasks for specific volunteer
-router.get('/volunteer/:volunteerId', authenticateToken, async (req, res) => {
+// Get tasks for specific monitor
+router.get('/monitor/:monitorId', authenticateToken, async (req, res) => {
   try {
-    const { volunteerId } = req.params;
+    const { monitorId } = req.params;
     const currentUserId = (req as any).user.id;
     const currentUserRole = (req as any).user.role;
 
     // If not librarian, only allow viewing own tasks
-    if (currentUserRole !== 'LIBRARIAN' && volunteerId !== currentUserId) {
+    if (currentUserRole !== 'LIBRARIAN' && monitorId !== currentUserId) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
@@ -77,14 +77,14 @@ router.get('/volunteer/:volunteerId', authenticateToken, async (req, res) => {
       where: {
         assignments: {
           some: {
-            volunteerId
+            monitorId: monitorId
           }
         }
       },
       include: {
         assignments: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -96,7 +96,7 @@ router.get('/volunteer/:volunteerId', authenticateToken, async (req, res) => {
         },
         statuses: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -117,9 +117,9 @@ router.get('/volunteer/:volunteerId', authenticateToken, async (req, res) => {
       priority: task.priority,
       dueDate: task.dueDate,
       dueTime: task.dueTime,
-      assignedTo: task.assignments.map(a => a.volunteer.id),
+      assignedTo: task.assignments.map(a => a.monitor.id),
       statuses: task.statuses.map(s => ({
-        volunteerId: s.volunteer.id,
+        monitorId: s.monitor.id,
         status: s.status,
         completedAt: s.completedAt
       })),
@@ -129,7 +129,7 @@ router.get('/volunteer/:volunteerId', authenticateToken, async (req, res) => {
 
     res.json(transformedTasks);
   } catch (error) {
-    console.error('Get volunteer tasks error:', error);
+    console.error('Get monitor tasks error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -143,16 +143,16 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
       return res.status(400).json({ error: 'Title, description, priority, dueDate, and assignedTo are required' });
     }
 
-    // Verify all assigned volunteers exist
-    const volunteers = await prisma.user.findMany({
+    // Verify all assigned monitors exist
+    const monitors = await prisma.user.findMany({
       where: {
         id: { in: assignedTo },
-        role: 'VOLUNTEER'
+        role: 'MONITOR'
       }
     });
 
-    if (volunteers.length !== assignedTo.length) {
-      return res.status(400).json({ error: 'One or more volunteers not found' });
+    if (monitors.length !== assignedTo.length) {
+      return res.status(400).json({ error: 'One or more monitors not found' });
     }
 
     // Create task with assignments and statuses
@@ -164,13 +164,13 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
         dueDate,
         dueTime,
         assignments: {
-          create: assignedTo.map((volunteerId: string) => ({
-            volunteerId
+          create: assignedTo.map((monitorId: string) => ({
+            monitorId: monitorId
           }))
         },
         statuses: {
-          create: assignedTo.map((volunteerId: string) => ({
-            volunteerId,
+          create: assignedTo.map((monitorId: string) => ({
+            monitorId: monitorId,
             status: 'PENDING'
           }))
         }
@@ -178,7 +178,7 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
       include: {
         assignments: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -190,7 +190,7 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
         },
         statuses: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -210,9 +210,9 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
       priority: task.priority,
       dueDate: task.dueDate,
       dueTime: task.dueTime,
-      assignedTo: task.assignments.map(a => a.volunteer.id),
+      assignedTo: task.assignments.map(a => a.monitor.id),
       statuses: task.statuses.map(s => ({
-        volunteerId: s.volunteer.id,
+        monitorId: s.monitor.id,
         status: s.status,
         completedAt: s.completedAt
       })),
@@ -242,17 +242,17 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    // If assignedTo is being updated, verify volunteers exist
+    // If assignedTo is being updated, verify monitors exist
     if (assignedTo) {
-      const volunteers = await prisma.user.findMany({
+      const monitors = await prisma.user.findMany({
         where: {
           id: { in: assignedTo },
-          role: 'VOLUNTEER'
+          role: 'MONITOR'
         }
       });
 
-      if (volunteers.length !== assignedTo.length) {
-        return res.status(400).json({ error: 'One or more volunteers not found' });
+      if (monitors.length !== assignedTo.length) {
+        return res.status(400).json({ error: 'One or more monitors not found' });
       }
     }
 
@@ -282,16 +282,16 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
 
       // Create new assignments and statuses
       await prisma.taskAssignment.createMany({
-        data: assignedTo.map((volunteerId: string) => ({
+        data: assignedTo.map((monitorId: string) => ({
           taskId: id,
-          volunteerId
+          monitorId: monitorId
         }))
       });
 
       await prisma.taskStatusRecord.createMany({
-        data: assignedTo.map((volunteerId: string) => ({
+        data: assignedTo.map((monitorId: string) => ({
           taskId: id,
-          volunteerId,
+          monitorId: monitorId,
           status: 'PENDING'
         }))
       });
@@ -303,7 +303,7 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
       include: {
         assignments: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -315,7 +315,7 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
         },
         statuses: {
           include: {
-            volunteer: {
+            monitor: {
               select: {
                 id: true,
                 name: true,
@@ -335,9 +335,9 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
       priority: updatedTask!.priority,
       dueDate: updatedTask!.dueDate,
       dueTime: updatedTask!.dueTime,
-      assignedTo: updatedTask!.assignments.map(a => a.volunteer.id),
+      assignedTo: updatedTask!.assignments.map(a => a.monitor.id),
       statuses: updatedTask!.statuses.map(s => ({
-        volunteerId: s.volunteer.id,
+        monitorId: s.monitor.id,
         status: s.status,
         completedAt: s.completedAt
       })),
@@ -352,45 +352,45 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
   }
 });
 
-// Update task status (volunteer or librarian)
+// Update task status (monitor or librarian)
 router.put('/:id/status', authenticateToken, async (req, res) => {
   try {
     const { id: taskId } = req.params;
-    const { volunteerId, status } = req.body;
+    const { monitorId, status } = req.body;
     const currentUserId = (req as any).user.id;
     const currentUserRole = (req as any).user.role;
 
     // If not librarian, only allow updating own status
-    if (currentUserRole !== 'LIBRARIAN' && volunteerId !== currentUserId) {
+    if (currentUserRole !== 'LIBRARIAN' && monitorId !== currentUserId) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
-    if (!volunteerId || !status) {
-      return res.status(400).json({ error: 'VolunteerId and status are required' });
+    if (!monitorId || !status) {
+      return res.status(400).json({ error: 'MonitorId and status are required' });
     }
 
-    // Check if task exists and volunteer is assigned
+    // Check if task exists and monitor is assigned
     const task = await prisma.task.findFirst({
       where: {
         id: taskId,
         assignments: {
           some: {
-            volunteerId
+            monitorId: monitorId
           }
         }
       }
     });
 
-    if (!task) {
-      return res.status(404).json({ error: 'Task not found or volunteer not assigned' });
+      if (!task) {
+      return res.status(404).json({ error: 'Task not found or monitor not assigned' });
     }
 
     // Update or create status
     const taskStatus = await prisma.taskStatusRecord.upsert({
       where: {
-        taskId_volunteerId: {
+        taskId_monitorId: {
           taskId,
-          volunteerId
+          monitorId: monitorId
         }
       },
       update: {
@@ -400,7 +400,7 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
       },
       create: {
         taskId,
-        volunteerId,
+        monitorId: monitorId,
         status: status as any,
         completedAt: status === 'COMPLETED' ? new Date() : null
       }

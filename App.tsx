@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import LoginPage from './pages/auth/LoginPage';
 import LibrarianDashboard from './pages/dashboard/LibrarianDashboard';
-import VolunteerDashboard from './pages/dashboard/VolunteerDashboard';
+import MonitorDashboard from './pages/dashboard/MonitorDashboard';
 import { AuthContext } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationsProvider } from './context/NotificationsContext';
@@ -54,8 +54,8 @@ const App: React.FC = () => {
     switch (currentUser.role) {
       case Role.Librarian:
         return <LibrarianDashboard />;
-      case Role.Volunteer:
-        return <VolunteerDashboard />;
+      case Role.Monitor:
+        return <MonitorDashboard />;
       default:
         // This case should ideally not be reached
         return <LoginPage initialError="Your user role is not recognized. Please contact an administrator." />;

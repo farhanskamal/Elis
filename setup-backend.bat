@@ -1,5 +1,5 @@
 @echo off
-echo 🚀 Setting up Library Volunteer Hub Backend...
+echo 🚀 Setting up Library Monitor Hub Backend...
 
 REM Check if Node.js is installed
 node --version >nul 2>&1
@@ -27,7 +27,7 @@ echo 🔧 Setting up environment variables...
 if not exist .env (
     copy .env.example .env
     echo ✅ Created .env file. Please update DATABASE_URL with your PostgreSQL credentials.
-    echo    Example: DATABASE_URL="postgresql://username:password@localhost:5432/library_volunteer_hub"
+    echo    Example: DATABASE_URL="postgresql://username:password@localhost:5432/library_monitor_hub"
 )
 
 echo 🗄️ Setting up database...
@@ -44,8 +44,8 @@ echo ✅ Backend setup complete!
 echo.
 echo 🔑 Login credentials:
 echo    Librarian: admin@school.edu / password123
-echo    Volunteer: ben@student.school.edu / password123
-echo    Volunteer: chloe@student.school.edu / password123
+echo    Monitor: ben@student.school.edu / password123
+echo    Monitor: chloe@student.school.edu / password123
 echo.
 echo 🚀 To start the backend server:
 echo    cd backend && npm run dev

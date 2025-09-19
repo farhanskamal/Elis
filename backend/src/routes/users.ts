@@ -154,7 +154,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // Create user (admin only)
 router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {
-    const { name, email, password, role = 'VOLUNTEER' } = req.body;
+    const { name, email, password, role = 'MONITOR' } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required' });

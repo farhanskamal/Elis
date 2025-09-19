@@ -1,7 +1,7 @@
 {
-  "name": "library-volunteer-hub-backend",
+  "name": "library-monitor-hub-backend",
   "version": "1.0.0",
-  "description": "Backend API for Library Volunteer Hub",
+  "description": "Backend API for Library Monitor Hub",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

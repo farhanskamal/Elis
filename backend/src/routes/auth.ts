@@ -39,9 +39,9 @@ router.post('/login', strictRateLimit, validate(validationSchemas.login), asyncH
   });
 }));
 
-// Register (for creating new volunteers)
+// Register (for creating new monitors)
 router.post('/register', strictRateLimit, validate(validationSchemas.register), asyncHandler(async (req, res) => {
-  const { name, email, password, role = 'VOLUNTEER' } = req.body;
+  const { name, email, password, role = 'MONITOR' } = req.body;
 
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({

@@ -1,5 +1,5 @@
 {
-  "name": "Copy of Library Volunteer Hub",
-  "description": "A comprehensive web application for high school libraries to manage student volunteers. It facilitates scheduling, hour tracking, and communication between librarians and volunteers, ensuring efficient library operations.",
+  "name": "Library Monitor Hub",
+  "description": "A comprehensive web application for high school libraries to manage student monitors. It facilitates scheduling, hour tracking, and communication between librarians and student monitors, ensuring efficient library operations.",
   "requestFramePermissions": []
 }

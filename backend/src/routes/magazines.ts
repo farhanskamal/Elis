@@ -24,7 +24,7 @@ router.get('/logs', authenticateToken, async (req, res) => {
     const logs = await prisma.magazineLog.findMany({
       include: {
         magazine: true,
-        checkedByVolunteer: {
+        checkedByMonitor: {
           select: {
             id: true,
             name: true,
@@ -93,7 +93,7 @@ router.post('/:id/log', authenticateToken, async (req, res) => {
   try {
     const { id: magazineId } = req.params;
     const { weekIdentifier } = req.body;
-    const volunteerId = (req as any).user.id;
+    const monitorId = (req as any).user.id;
 
     if (!weekIdentifier) {
       return res.status(400).json({ error: 'Week identifier is required' });
@@ -126,11 +126,11 @@ router.post('/:id/log', authenticateToken, async (req, res) => {
       data: {
         magazineId,
         weekIdentifier,
-        checkedByVolunteerId: volunteerId
+        checkedByMonitorId: monitorId
       },
       include: {
         magazine: true,
-        checkedByVolunteer: {
+        checkedByMonitor: {
           select: {
             id: true,
             name: true,

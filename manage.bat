@@ -27,7 +27,7 @@ set "CADDY_PID=%PIDS_DIR%\caddy.pid"
 set "CLOUDFLARED_PID=%PIDS_DIR%\cloudflared.pid"
 
 echo %CYAN%======================================%RESET%
-echo %CYAN%   Library Volunteer Hub Manager     %RESET%
+echo %CYAN%   Library Monitor Hub Manager      %RESET%
 echo %CYAN%======================================%RESET%
 echo.
 
@@ -59,7 +59,7 @@ echo.
 goto :end
 
 :show_help
-echo %WHITE%Library Volunteer Hub Management Script%RESET%
+echo %WHITE%Library Monitor Hub Management Script%RESET%
 echo.
 echo %YELLOW%Commands:%RESET%
 echo   %GREEN%start%RESET%                    - Start all services
@@ -80,7 +80,7 @@ echo.
 goto :end
 
 :start_services
-echo %GREEN%🚀 Starting Library Volunteer Hub services...%RESET%
+echo %GREEN%🚀 Starting Library Monitor Hub services...%RESET%
 echo.
 
 REM Check if already running
@@ -134,7 +134,7 @@ echo.
 goto :end
 
 :stop_services
-echo %RED%🛑 Stopping Library Volunteer Hub services...%RESET%
+echo %RED%🛑 Stopping Library Monitor Hub services...%RESET%
 echo.
 
 REM Disable maintenance mode first

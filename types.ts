@@ -1,6 +1,6 @@
 export enum Role {
   Librarian = 'LIBRARIAN',
-  Volunteer = 'VOLUNTEER',
+  Monitor = 'MONITOR',
 }
 
 export interface User {
@@ -13,10 +13,10 @@ export interface User {
   backgroundColor?: string;
 }
 
-export interface VolunteerLog {
+export interface MonitorLog {
   id: string;
-  volunteerId: string;
-  volunteerName: string;
+  monitorId: string;
+  monitorName: string;
   date: string;
   period: number;
   checkIn: string;
@@ -28,7 +28,7 @@ export interface Shift {
   id: string;
   date: string; // YYYY-MM-DD
   period: number; // 1-9
-  volunteerIds: string[];
+  monitorIds: string[];
 }
 
 export interface Magazine {
@@ -40,7 +40,7 @@ export interface MagazineLog {
   id: string;
   magazineId: string;
   weekIdentifier: string; // e.g., "2024-W29"
-  checkedByVolunteerId: string;
+  checkedByMonitorId: string;
   timestamp: string; // ISO 8601 format
 }
 
@@ -67,8 +67,8 @@ export enum TaskStatus {
   CannotComplete = 'CANNOT_COMPLETE'
 }
 
-export interface VolunteerTaskStatus {
-  volunteerId: string;
+export interface MonitorTaskStatus {
+  monitorId: string;
   status: TaskStatus;
   completedAt?: string;
 }
@@ -80,8 +80,8 @@ export interface Task {
   priority: TaskPriority;
   dueDate: string; // YYYY-MM-DD
   dueTime?: string; // HH:mm
-  assignedTo: string[]; // Array of volunteer IDs
-  statuses: VolunteerTaskStatus[];
+  assignedTo: string[]; // Array of monitor IDs
+  statuses: MonitorTaskStatus[];
   createdAt: string;
   updatedAt?: string;
 }

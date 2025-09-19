@@ -41,19 +41,19 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveView }) 
         { id: 'tasks', text: 'Assign Tasks', icon: <ClipboardListIcon /> },
         { id: 'announcements', text: 'Announcements', icon: <MegaphoneIcon /> },
         { id: 'users', text: 'Manage Users', icon: <UsersIcon /> },
-        { id: 'hours', text: 'Volunteer Hours', icon: <ClockIcon /> },
+        { id: 'hours', text: 'Monitor Hours', icon: <ClockIcon /> },
         { id: 'checkin-codes', text: 'Check-in Codes', icon: <KeyIcon /> },
         { id: 'audit', text: 'Audit Log', icon: <ClipboardListIcon /> },
     ];
 
-    const volunteerLinks = [
+    const monitorLinks = [
         ...commonLinks,
         { id: 'my-tasks', text: 'My Tasks', icon: <ClipboardListIcon /> },
         { id: 'announcements', text: 'Announcements', icon: <MegaphoneIcon /> },
         { id: 'my-hours', text: 'My Hours', icon: <ClockIcon /> },
     ];
 
-    const navLinks = user?.role === Role.Librarian ? librarianLinks : volunteerLinks;
+    const navLinks = user?.role === Role.Librarian ? librarianLinks : monitorLinks;
     
     const handleLinkClick = (view: string) => {
         setActiveView(view);

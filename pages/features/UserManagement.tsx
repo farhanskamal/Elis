@@ -5,26 +5,26 @@ import { AuthContext } from '../../context/AuthContext';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
-import VolunteerProfileModal from './VolunteerProfileModal';
+import MonitorProfileModal from './MonitorProfileModal';
 
 const UserManagement: React.FC = () => {
     const { user } = useContext(AuthContext);
-    const [volunteers, setVolunteers] = useState<User[]>([]);
+    const [monitors, setMonitors] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedVolunteer, setSelectedVolunteer] = useState<User | null>(null);
-    const [editingVolunteer, setEditingVolunteer] = useState<User | null>(null);
+    const [selectedMonitor, setSelectedMonitor] = useState<User | null>(null);
+    const [editingMonitor, setEditingMonitor] = useState<User | null>(null);
     const [formState, setFormState] = useState<{name: string; email: string; password: string; role: Role; profilePicture: string; backgroundColor: string}>({
-        name: '', email: '', password: '', role: Role.Volunteer, profilePicture: '', backgroundColor: '#f3f4f6'
+        name: '', email: '', password: '', role: Role.Monitor, profilePicture: '', backgroundColor: '#f3f4f6'
     });
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    const fetchVolunteers = async () => {
+    const fetchMonitors = async () => {
         setLoading(true);
         try {
             const data = await api.getAllUsers();
-            setVolunteers(data);
+            setMonitors(data);
         } catch (error) {
-            console.error('Failed to fetch volunteers:', error);
+            console.error('Failed to fetch monitors:', error);
             // You could set an error state here if needed
         } finally {
             setLoading(false);
@@ -33,7 +33,7 @@ const UserManagement: React.FC = () => {
 
     useEffect(() => {
         if (user?.role === Role.Librarian) {
-            fetchVolunteers();
+            fetchMonitors();
         } else if (user) {
             // If user is logged in but not a librarian, stop loading
             setLoading(false);
@@ -49,7 +49,7 @@ const UserManagement: React.FC = () => {
         
         await api.createUser(name, email, password);
         setIsCreateModalOpen(false);
-        fetchVolunteers(); // Refresh list
+        fetchMonitors(); // Refresh list
     };
     
     if (loading) return <div className="flex justify-center"><Spinner /></div>;
@@ -58,7 +58,7 @@ const UserManagement: React.FC = () => {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
-                <Button onClick={() => setIsCreateModalOpen(true)}>Add Volunteer</Button>
+                <Button onClick={() => setIsCreateModalOpen(true)}>Add Monitor</Button>
             </div>
 
             <Card>
@@ -73,22 +73,22 @@ const UserManagement: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {volunteers.map(vol => (
-                                <tr key={vol.id} className="bg-white border-b hover:bg-gray-50">
+                            {monitors.map(mon => (
+                                <tr key={mon.id} className="bg-white border-b hover:bg-gray-50">
                                     <td className="px-6 py-4 font-medium text-gray-900 flex items-center space-x-3">
-                                        <img className="h-8 w-8 rounded-full" src={vol.profilePicture} alt={`${vol.name}'s profile`} />
-                                        <span>{vol.name}</span>
+                                        <img className="h-8 w-8 rounded-full" src={mon.profilePicture} alt={`${mon.name}'s profile`} />
+                                        <span>{mon.name}</span>
                                     </td>
-                                    <td className="px-6 py-4">{vol.email}</td>
-                                    <td className="px-6 py-4">{vol.role}</td>
+                                    <td className="px-6 py-4">{mon.email}</td>
+                                    <td className="px-6 py-4">{mon.role}</td>
                                     <td className="px-6 py-4 space-x-3">
-                                        <button onClick={() => setSelectedVolunteer(vol)} className="font-medium text-blue-600 hover:underline">View</button>
-                                        <button onClick={() => { setEditingVolunteer(vol); setFormState({ name: vol.name, email: vol.email, password: '', role: vol.role, profilePicture: vol.profilePicture, backgroundColor: vol.backgroundColor || '#f3f4f6' }); }} className="font-medium text-gray-700 hover:underline">Edit</button>
+                                        <button onClick={() => setSelectedMonitor(mon)} className="font-medium text-blue-600 hover:underline">View</button>
+                                        <button onClick={() => { setEditingMonitor(mon); setFormState({ name: mon.name, email: mon.email, password: '', role: mon.role, profilePicture: mon.profilePicture, backgroundColor: mon.backgroundColor || '#f3f4f6' }); }} className="font-medium text-gray-700 hover:underline">Edit</button>
                                         <button onClick={async () => {
-                                            if (!window.confirm(`Delete ${vol.name}? This cannot be undone.`)) return;
+                                            if (!window.confirm(`Delete ${mon.name}? This cannot be undone.`)) return;
                                             try {
-                                                await api.deleteUser(vol.id);
-                                                fetchVolunteers();
+                                                await api.deleteUser(mon.id);
+                                                fetchMonitors();
                                             } catch (e) {
                                                 alert('Failed to delete user');
                                             }
@@ -101,18 +101,18 @@ const UserManagement: React.FC = () => {
                 </div>
             </Card>
 
-            {selectedVolunteer && (
-                <VolunteerProfileModal 
-                    volunteer={selectedVolunteer} 
-                    onClose={() => setSelectedVolunteer(null)}
-                    onUpdate={fetchVolunteers}
+            {selectedMonitor && (
+                <MonitorProfileModal 
+                    monitor={selectedMonitor} 
+                    onClose={() => setSelectedMonitor(null)}
+                    onUpdate={fetchMonitors}
                 />
             )}
 
             {isCreateModalOpen && (
                  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
                     <Card className="w-full max-w-md">
-                        <h2 className="text-xl font-bold mb-4">Create New Volunteer</h2>
+                        <h2 className="text-xl font-bold mb-4">Create New Monitor</h2>
                         <form onSubmit={handleCreateUser} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium">Full Name</label>
@@ -135,21 +135,21 @@ const UserManagement: React.FC = () => {
                 </div>
             )}
 
-            {editingVolunteer && (
+            {editingMonitor && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
                     <Card className="w-full max-w-md">
                         <h2 className="text-xl font-bold mb-4">Edit User</h2>
                         <form onSubmit={async (e) => {
                             e.preventDefault();
                             // Confirm role change if changing to/from librarian
-                            const originalRole = editingVolunteer.role;
+                            const originalRole = editingMonitor.role;
                             const roleChanged = originalRole !== formState.role;
                             if (roleChanged) {
                               const ok = window.confirm(`Are you sure you want to change role from ${originalRole} to ${formState.role}?`);
                               if (!ok) return;
                             }
                             await api.updateUser(
-                              editingVolunteer.id,
+                              editingMonitor.id,
                               formState.name,
                               formState.email,
                               formState.password || undefined,
@@ -157,8 +157,8 @@ const UserManagement: React.FC = () => {
                               formState.backgroundColor,
                               formState.role,
                             );
-                            setEditingVolunteer(null);
-                            fetchVolunteers();
+                            setEditingMonitor(null);
+                            fetchMonitors();
                         }} className="space-y-3">
                             <div>
                                 <label className="block text-sm font-medium">Full Name</label>
@@ -183,12 +183,12 @@ const UserManagement: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium">Role</label>
                                 <select value={formState.role} onChange={(e) => setFormState({ ...formState, role: e.target.value as Role })} className="mt-1 w-full p-2 border rounded-md">
-                                    <option value={Role.Volunteer}>VOLUNTEER</option>
+                                    <option value={Role.Monitor}>MONITOR</option>
                                     <option value={Role.Librarian}>LIBRARIAN</option>
                                 </select>
                             </div>
                             <div className="flex justify-end space-x-2 pt-3">
-                                <Button type="button" variant="secondary" onClick={() => setEditingVolunteer(null)}>Cancel</Button>
+                                <Button type="button" variant="secondary" onClick={() => setEditingMonitor(null)}>Cancel</Button>
                                 <Button type="submit">Save</Button>
                             </div>
                         </form>

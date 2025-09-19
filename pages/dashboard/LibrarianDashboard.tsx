@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Layout from '../../components/Layout';
 import ScheduleView from '../features/ScheduleView';
 import MagazineTracker from '../features/MagazineTracker';
-import VolunteerHours from '../features/VolunteerHours';
+import MonitorHours from '../features/MonitorHours';
 import Card from '../../components/ui/Card';
 import UserManagement from '../features/UserManagement';
 import Announcements from '../features/Announcements';
@@ -20,7 +20,7 @@ const LibrarianDashboard: React.FC = () => {
             case 'magazines':
                 return <MagazineTracker />;
             case 'hours':
-                return <VolunteerHours />;
+                return <MonitorHours />;
             case 'users':
                 return <UserManagement />;
             case 'announcements':
@@ -39,32 +39,32 @@ const LibrarianDashboard: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <Card className="hover:shadow-lg transition-shadow">
                                 <h2 className="text-xl font-semibold mb-2">Manage Schedule</h2>
-                                <p className="text-gray-600">Assign volunteers and set period durations for hour logging.</p>
+                                <p className="text-gray-600">Assign monitors and set period durations for hour logging.</p>
                                 <button onClick={() => setActiveView('schedule')} className="mt-4 text-blue-600 font-semibold">Go to Schedule &rarr;</button>
                             </Card>
                              <Card className="hover:shadow-lg transition-shadow">
                                 <h2 className="text-xl font-semibold mb-2">Assign Tasks</h2>
-                                <p className="text-gray-600">Create and delegate tasks to individual or all volunteers.</p>
+                                <p className="text-gray-600">Create and delegate tasks to individual or all monitors.</p>
                                 <button onClick={() => setActiveView('tasks')} className="mt-4 text-blue-600 font-semibold">Go to Tasks &rarr;</button>
                             </Card>
                             <Card className="hover:shadow-lg transition-shadow">
                                 <h2 className="text-xl font-semibold mb-2">Post Announcements</h2>
-                                <p className="text-gray-600">Share important updates and news with all volunteers.</p>
+                                <p className="text-gray-600">Share important updates and news with all monitors.</p>
                                 <button onClick={() => setActiveView('announcements')} className="mt-4 text-blue-600 font-semibold">View Announcements &rarr;</button>
                             </Card>
                             <Card className="hover:shadow-lg transition-shadow">
                                 <h2 className="text-xl font-semibold mb-2">Check-in Codes</h2>
-                                <p className="text-gray-600">View and generate new codes for volunteer hour logging.</p>
+                                <p className="text-gray-600">View and generate new codes for monitor hour logging.</p>
                                 <button onClick={() => setActiveView('checkin-codes')} className="mt-4 text-blue-600 font-semibold">Manage Codes &rarr;</button>
                             </Card>
                              <Card className="hover:shadow-lg transition-shadow">
                                 <h2 className="text-xl font-semibold mb-2">Manage Users</h2>
-                                <p className="text-gray-600">View volunteer profiles and manage their accounts.</p>
+                                <p className="text-gray-600">View monitor profiles and manage their accounts.</p>
                                 <button onClick={() => setActiveView('users')} className="mt-4 text-blue-600 font-semibold">Go to Users &rarr;</button>
                             </Card>
                             <Card className="hover:shadow-lg transition-shadow">
-                                <h2 className="text-xl font-semibold mb-2">Volunteer Hours</h2>
-                                <p className="text-gray-600">Review and generate reports on all volunteer hours logged.</p>
+                                <h2 className="text-xl font-semibold mb-2">Monitor Hours</h2>
+                                <p className="text-gray-600">Review and generate reports on all monitor hours logged.</p>
                                 <button onClick={() => setActiveView('hours')} className="mt-4 text-blue-600 font-semibold">View Hours &rarr;</button>
                             </Card>
                         </div>

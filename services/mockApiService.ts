@@ -1,20 +1,20 @@
-import { User, Role, Shift, Magazine, VolunteerLog, Announcement, Task, TaskPriority, MagazineLog, TaskStatus, VolunteerTaskStatus, PeriodDefinition } from '../types';
+import { User, Role, Shift, Magazine, MonitorLog, Announcement, Task, TaskPriority, MagazineLog, TaskStatus, MonitorTaskStatus, PeriodDefinition } from '../types';
 
 // --- MOCK DATABASE ---
 
 // Passwords would be in a real database. Stored in plaintext for demo purposes ONLY.
 export let mockUsers: User[] = [
   { id: 'user-1', name: 'Dr. Anya Sharma', email: 'admin@school.edu', password: 'password123', role: Role.Librarian, profilePicture: 'https://picsum.photos/seed/librarian/100/100', backgroundColor: '#f3f4f6' },
-  { id: 'user-2', name: 'Ben Carter', email: 'ben@student.school.edu', password: 'password123', role: Role.Volunteer, profilePicture: 'https://picsum.photos/seed/ben/100/100', backgroundColor: '#f3f4f6' },
-  { id: 'user-3', name: 'Chloe Davis', email: 'chloe@student.school.edu', password: 'password123', role: Role.Volunteer, profilePicture: 'https://picsum.photos/seed/chloe/100/100', backgroundColor: '#f3f4f6' },
+  { id: 'user-2', name: 'Ben Carter', email: 'ben@student.school.edu', password: 'password123', role: Role.Monitor, profilePicture: 'https://picsum.photos/seed/ben/100/100', backgroundColor: '#f3f4f6' },
+  { id: 'user-3', name: 'Chloe Davis', email: 'chloe@student.school.edu', password: 'password123', role: Role.Monitor, profilePicture: 'https://picsum.photos/seed/chloe/100/100', backgroundColor: '#f3f4f6' },
 ];
 
 let mockShifts: Shift[] = [
-    { id: 'shift-1', date: '2024-07-29', period: 3, volunteerIds: ['user-2'] },
-    { id: 'shift-2', date: '2024-07-29', period: 4, volunteerIds: ['user-3'] },
-    { id: 'shift-3', date: '2024-07-30', period: 3, volunteerIds: ['user-3', 'user-2'] },
-    { id: 'shift-4', date: '2024-07-30', period: 4, volunteerIds: ['user-2'] },
-    { id: 'shift-5', date: '2024-08-05', period: 1, volunteerIds: ['user-2'] },
+    { id: 'shift-1', date: '2024-07-29', period: 3, monitorIds: ['user-2'] },
+    { id: 'shift-2', date: '2024-07-29', period: 4, monitorIds: ['user-3'] },
+    { id: 'shift-3', date: '2024-07-30', period: 3, monitorIds: ['user-3', 'user-2'] },
+    { id: 'shift-4', date: '2024-07-30', period: 4, monitorIds: ['user-2'] },
+    { id: 'shift-5', date: '2024-08-05', period: 1, monitorIds: ['user-2'] },
 ];
 
 let mockMagazines: Magazine[] = [
@@ -24,16 +24,16 @@ let mockMagazines: Magazine[] = [
 ];
 
 let mockMagazineLogs: MagazineLog[] = [
-    { id: 'mlog-1', magazineId: 'mag-1', weekIdentifier: '2024-W31', checkedByVolunteerId: 'user-2', timestamp: new Date().toISOString() }
+    { id: 'mlog-1', magazineId: 'mag-1', weekIdentifier: '2024-W31', checkedByMonitorId: 'user-2', timestamp: new Date().toISOString() }
 ];
 
-let mockVolunteerLogs: VolunteerLog[] = [
-    { id: 'log-1', volunteerId: 'user-2', volunteerName: 'Ben Carter', date: '2024-07-22', period: 3, checkIn: '10:05', checkOut: '10:50', durationMinutes: 45 },
-    { id: 'log-2', volunteerId: 'user-3', volunteerName: 'Chloe Davis', date: '2024-07-22', period: 4, checkIn: '11:00', checkOut: '11:45', durationMinutes: 45 },
+let mockMonitorLogs: MonitorLog[] = [
+    { id: 'log-1', monitorId: 'user-2', monitorName: 'Ben Carter', date: '2024-07-22', period: 3, checkIn: '10:05', checkOut: '10:50', durationMinutes: 45 },
+    { id: 'log-2', monitorId: 'user-3', monitorName: 'Chloe Davis', date: '2024-07-22', period: 4, checkIn: '11:00', checkOut: '11:45', durationMinutes: 45 },
 ];
 
 let mockAnnouncements: Announcement[] = [
-    { id: 'anno-1', title: 'Welcome Back!', content: 'Welcome back to a new school year! We are excited to have our volunteers back in the library.', authorId: 'user-1', authorName: 'Dr. Anya Sharma', createdAt: new Date().toISOString() }
+    { id: 'anno-1', title: 'Welcome Back!', content: 'Welcome back to a new school year! We are excited to have our monitors back in the library.', authorId: 'user-1', authorName: 'Dr. Anya Sharma', createdAt: new Date().toISOString() }
 ];
 
 let mockTasks: Task[] = [
@@ -45,8 +45,8 @@ let mockTasks: Task[] = [
         dueDate: '2024-08-15', 
         assignedTo: ['user-2', 'user-3'], 
         statuses: [
-            { volunteerId: 'user-2', status: TaskStatus.Pending },
-            { volunteerId: 'user-3', status: TaskStatus.Pending }
+            { monitorId: 'user-2', status: TaskStatus.Pending },
+            { monitorId: 'user-3', status: TaskStatus.Pending }
         ],
         createdAt: new Date().toISOString() 
     },
@@ -58,7 +58,7 @@ let mockTasks: Task[] = [
         dueDate: '2024-08-01', 
         assignedTo: ['user-2'], 
         statuses: [
-            { volunteerId: 'user-2', status: TaskStatus.Completed, completedAt: new Date().toISOString() }
+            { monitorId: 'user-2', status: TaskStatus.Completed, completedAt: new Date().toISOString() }
         ],
         createdAt: new Date().toISOString()
     },
@@ -101,7 +101,7 @@ export const api = {
     },
 
     // --- USERS ---
-    getAllVolunteers: () => simulateNetworkDelay(mockUsers.filter(u => u.role === Role.Volunteer).map(sanitizeUser)),
+    getAllMonitors: () => simulateNetworkDelay(mockUsers.filter(u => u.role === Role.Monitor).map(sanitizeUser)),
     updateUser: (userId: string, name: string, email: string) => {
         const userIndex = mockUsers.findIndex(u => u.id === userId);
         if (userIndex > -1) {
@@ -127,7 +127,7 @@ export const api = {
         const newUser: User = {
             id: `user-${Date.now()}`,
             name, email, password,
-            role: Role.Volunteer,
+            role: Role.Monitor,
             profilePicture: `https://picsum.photos/seed/${name}/100/100`,
             backgroundColor: '#f3f4f6',
         };
@@ -146,20 +146,20 @@ export const api = {
         });
         return simulateNetworkDelay(shifts);
     },
-    createShift: (date: string, period: number, volunteerIds: string[]) => {
+    createShift: (date: string, period: number, monitorIds: string[]) => {
         const newShift: Shift = {
             id: `shift-${Date.now()}`,
             date,
             period,
-            volunteerIds,
+            monitorIds,
         };
         mockShifts.push(newShift);
         return simulateNetworkDelay(newShift);
     },
-    updateShift: (shiftId: string, volunteerIds: string[]) => {
+    updateShift: (shiftId: string, monitorIds: string[]) => {
         const shiftIndex = mockShifts.findIndex(s => s.id === shiftId);
         if (shiftIndex > -1) {
-            mockShifts[shiftIndex].volunteerIds = volunteerIds;
+            mockShifts[shiftIndex].monitorIds = monitorIds;
             return simulateNetworkDelay(mockShifts[shiftIndex]);
         }
         return Promise.reject("Shift not found");
@@ -183,12 +183,12 @@ export const api = {
         mockMagazineLogs = mockMagazineLogs.filter(ml => ml.magazineId !== magazineId);
         return simulateNetworkDelay({ success: true });
     },
-    logMagazineCheck: (magazineId: string, weekIdentifier: string, volunteerId: string) => {
+    logMagazineCheck: (magazineId: string, weekIdentifier: string, monitorId: string) => {
         const newLog: MagazineLog = {
             id: `mlog-${Date.now()}`,
             magazineId,
             weekIdentifier,
-            checkedByVolunteerId: volunteerId,
+            checkedByMonitorId: monitorId,
             timestamp: new Date().toISOString(),
         };
         mockMagazineLogs.push(newLog);
@@ -205,55 +205,55 @@ export const api = {
         mockCheckinCode = Math.floor(100000 + Math.random() * 900000).toString();
         return simulateNetworkDelay({ code: mockCheckinCode });
     },
-    logHoursWithCode: (volunteerId: string, date: string, period: number, code: string) => {
+    logHoursWithCode: (monitorId: string, date: string, period: number, code: string) => {
         if (code !== mockCheckinCode) {
             return Promise.reject("Invalid check-in code.");
         }
-        const volunteer = mockUsers.find(u => u.id === volunteerId);
-        if (!volunteer) {
-             return Promise.reject("Volunteer not found.");
+        const monitor = mockUsers.find(u => u.id === monitorId);
+        if (!monitor) {
+             return Promise.reject("Monitor not found.");
         }
 
-        const scheduledShift = mockShifts.find(s => s.date === date && s.period === period && s.volunteerIds.includes(volunteerId));
+        const scheduledShift = mockShifts.find(s => s.date === date && s.period === period && s.monitorIds.includes(monitorId));
         if (!scheduledShift) {
             return Promise.reject("You are not scheduled for this period on this date.");
         }
 
-        const existingLog = mockVolunteerLogs.find(l => l.volunteerId === volunteerId && l.date === date && l.period === period);
+        const existingLog = mockMonitorLogs.find(l => l.monitorId === monitorId && l.date === date && l.period === period);
         if (existingLog) {
             return Promise.reject("Hours for this period have already been logged.");
         }
 
         const periodDefinition = mockPeriodDefinitions.find(p => p.period === period);
 
-        const newLog: VolunteerLog = {
+        const newLog: MonitorLog = {
             id: `log-${Date.now()}-${period}`,
-            volunteerId: volunteerId,
-            volunteerName: volunteer.name,
+            monitorId: monitorId,
+            monitorName: monitor.name,
             date: date,
             period: period,
             checkIn: 'Logged',
             checkOut: 'Logged',
             durationMinutes: periodDefinition?.duration || 0
         };
-        mockVolunteerLogs.push(newLog);
+        mockMonitorLogs.push(newLog);
 
         return simulateNetworkDelay({ success: true, log: newLog });
     },
-    getVolunteerLogs: (volunteerId?: string) => {
-        const logs = volunteerId ? mockVolunteerLogs.filter(l => l.volunteerId === volunteerId) : mockVolunteerLogs;
+    getMonitorLogs: (monitorId?: string) => {
+        const logs = monitorId ? mockMonitorLogs.filter(l => l.monitorId === monitorId) : mockMonitorLogs;
         return simulateNetworkDelay(logs);
     },
-    updateVolunteerLog: (logId: string, updatedLogData: Partial<VolunteerLog>) => {
-        const logIndex = mockVolunteerLogs.findIndex(l => l.id === logId);
+    updateMonitorLog: (logId: string, updatedLogData: Partial<MonitorLog>) => {
+        const logIndex = mockMonitorLogs.findIndex(l => l.id === logId);
         if (logIndex > -1) {
-            mockVolunteerLogs[logIndex] = { ...mockVolunteerLogs[logIndex], ...updatedLogData };
-            return simulateNetworkDelay(mockVolunteerLogs[logIndex]);
+            mockMonitorLogs[logIndex] = { ...mockMonitorLogs[logIndex], ...updatedLogData };
+            return simulateNetworkDelay(mockMonitorLogs[logIndex]);
         }
         return Promise.reject("Log not found");
     },
-    deleteVolunteerLog: (logId: string) => {
-        mockVolunteerLogs = mockVolunteerLogs.filter(l => l.id !== logId);
+    deleteMonitorLog: (logId: string) => {
+        mockMonitorLogs = mockMonitorLogs.filter(l => l.id !== logId);
         return simulateNetworkDelay({ success: true });
     },
 
@@ -291,13 +291,13 @@ export const api = {
 
     // --- TASKS ---
     getTasks: () => simulateNetworkDelay(mockTasks.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
-    getTasksForVolunteer: (volunteerId: string) => {
-        const tasks = mockTasks.filter(t => t.assignedTo.includes(volunteerId));
+    getTasksForMonitor: (monitorId: string) => {
+        const tasks = mockTasks.filter(t => t.assignedTo.includes(monitorId));
         return simulateNetworkDelay(tasks);
     },
     createTask: (data: Omit<Task, 'id' | 'createdAt' | 'statuses'>) => {
-        const statuses: VolunteerTaskStatus[] = data.assignedTo.map(vid => ({
-            volunteerId: vid,
+        const statuses: MonitorTaskStatus[] = data.assignedTo.map(mid => ({
+            monitorId: mid,
             status: TaskStatus.Pending
         }));
         const newTask: Task = {
@@ -316,8 +316,8 @@ export const api = {
             mockTasks[taskIndex] = { ...originalTask, ...data, updatedAt: new Date().toISOString() };
             // If assignedTo changes, we might need to update statuses array
             if (data.assignedTo) {
-                const newStatuses: VolunteerTaskStatus[] = data.assignedTo.map(vid => {
-                    return originalTask.statuses.find(s => s.volunteerId === vid) || { volunteerId: vid, status: TaskStatus.Pending };
+                const newStatuses: MonitorTaskStatus[] = data.assignedTo.map(mid => {
+                    return originalTask.statuses.find(s => s.monitorId === mid) || { monitorId: mid, status: TaskStatus.Pending };
                 });
                 mockTasks[taskIndex].statuses = newStatuses;
             }
@@ -329,10 +329,10 @@ export const api = {
         mockTasks = mockTasks.filter(t => t.id !== taskId);
         return simulateNetworkDelay({ success: true });
     },
-    updateTaskStatus: (taskId: string, volunteerId: string, status: TaskStatus) => {
+    updateTaskStatus: (taskId: string, monitorId: string, status: TaskStatus) => {
         const taskIndex = mockTasks.findIndex(t => t.id === taskId);
         if (taskIndex > -1) {
-            const statusIndex = mockTasks[taskIndex].statuses.findIndex(s => s.volunteerId === volunteerId);
+            const statusIndex = mockTasks[taskIndex].statuses.findIndex(s => s.monitorId === monitorId);
             if (statusIndex > -1) {
                 mockTasks[taskIndex].statuses[statusIndex].status = status;
                 if(status === TaskStatus.Completed) {
@@ -342,7 +342,7 @@ export const api = {
                 }
                 return simulateNetworkDelay(mockTasks[taskIndex]);
             }
-            return Promise.reject("Volunteer not assigned to this task");
+            return Promise.reject("Monitor not assigned to this task");
         }
         return Promise.reject("Task not found");
     }

@@ -6,7 +6,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
 
-const VolunteerTasks: React.FC = () => {
+const MonitorTasks: React.FC = () => {
     const { user } = useContext(AuthContext);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
@@ -14,7 +14,7 @@ const VolunteerTasks: React.FC = () => {
     const fetchTasks = async () => {
         if (!user) return;
         setLoading(true);
-        const data = await api.getTasksForVolunteer(user.id);
+        const data = await api.getTasksForMonitor(user.id);
         setTasks(data);
         setLoading(false);
     };
@@ -43,9 +43,9 @@ const VolunteerTasks: React.FC = () => {
 
     if(loading) return <Spinner/>
 
-    const pending = tasks.filter(t => (t.statuses.find(s => s.volunteerId === user?.id)?.status || TaskStatus.Pending) === TaskStatus.Pending);
-    const completed = tasks.filter(t => (t.statuses.find(s => s.volunteerId === user?.id)?.status) === TaskStatus.Completed);
-    const cannot = tasks.filter(t => (t.statuses.find(s => s.volunteerId === user?.id)?.status) === TaskStatus.CannotComplete);
+    const pending = tasks.filter(t => (t.statuses.find(s => s.monitorId === user?.id)?.status || TaskStatus.Pending) === TaskStatus.Pending);
+    const completed = tasks.filter(t => (t.statuses.find(s => s.monitorId === user?.id)?.status) === TaskStatus.Completed);
+    const cannot = tasks.filter(t => (t.statuses.find(s => s.monitorId === user?.id)?.status) === TaskStatus.CannotComplete);
 
     return (
         <div>
@@ -106,4 +106,4 @@ const VolunteerTasks: React.FC = () => {
     );
 };
 
-export default VolunteerTasks;
+export default MonitorTasks;

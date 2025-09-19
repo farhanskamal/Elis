@@ -1,4 +1,4 @@
-import { User, Role, Shift, Magazine, VolunteerLog, Announcement, Task, TaskPriority, MagazineLog, TaskStatus, VolunteerTaskStatus, PeriodDefinition } from '../types';
+import { User, Role, Shift, Magazine, MonitorLog, Announcement, Task, TaskPriority, MagazineLog, TaskStatus, MonitorTaskStatus, PeriodDefinition } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -115,7 +115,7 @@ class ApiService {
     return response;
   }
 
-  async registerUser(name: string, email: string, password: string, role: Role = Role.Volunteer): Promise<{ user: User }> {
+  async registerUser(name: string, email: string, password: string, role: Role = Role.Monitor): Promise<{ user: User }> {
     return this.request<{ user: User }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ name, email, password, role }),
@@ -175,7 +175,7 @@ class ApiService {
     });
   }
 
-  async createUser(name: string, email: string, password: string, role: Role = Role.Volunteer): Promise<User> {
+  async createUser(name: string, email: string, password: string, role: Role = Role.Monitor): Promise<User> {
     return this.request<User>('/users', {
       method: 'POST',
       body: JSON.stringify({ name, email, password, role }),
@@ -193,17 +193,17 @@ class ApiService {
     return this.request<Shift[]>(`/shifts/week/${startDate}`);
   }
 
-  async createShift(date: string, period: number, volunteerIds: string[]): Promise<Shift> {
+  async createShift(date: string, period: number, monitorIds: string[]): Promise<Shift> {
     return this.request<Shift>('/shifts', {
       method: 'POST',
-      body: JSON.stringify({ date, period, volunteerIds }),
+      body: JSON.stringify({ date, period, monitorIds }),
     });
   }
 
-  async updateShift(shiftId: string, volunteerIds: string[]): Promise<Shift> {
+  async updateShift(shiftId: string, monitorIds: string[]): Promise<Shift> {
     return this.request<Shift>(`/shifts/${shiftId}`, {
       method: 'PUT',
-      body: JSON.stringify({ volunteerIds }),
+      body: JSON.stringify({ monitorIds }),
     });
   }
 
@@ -270,27 +270,27 @@ class ApiService {
     });
   }
 
-  async logHoursWithCode(volunteerId: string, date: string, period: number, code: string): Promise<VolunteerLog> {
-    return this.request<VolunteerLog>('/volunteer-logs/log-hours', {
+  async logHoursWithCode(monitorId: string, date: string, period: number, code: string): Promise<MonitorLog> {
+    return this.request<MonitorLog>('/monitor-logs/log-hours', {
       method: 'POST',
-      body: JSON.stringify({ volunteerId, date, period, code }),
+      body: JSON.stringify({ monitorId, date, period, code }),
     });
   }
 
-  async getVolunteerLogs(volunteerId?: string): Promise<VolunteerLog[]> {
-    const params = volunteerId ? `?volunteerId=${volunteerId}` : '';
-    return this.request<VolunteerLog[]>(`/volunteer-logs${params}`);
+  async getMonitorLogs(monitorId?: string): Promise<MonitorLog[]> {
+    const params = monitorId ? `?monitorId=${monitorId}` : '';
+    return this.request<MonitorLog[]>(`/monitor-logs${params}`);
   }
 
-  async updateVolunteerLog(logId: string, updatedLogData: Partial<VolunteerLog>): Promise<VolunteerLog> {
-    return this.request<VolunteerLog>(`/volunteer-logs/${logId}`, {
+  async updateMonitorLog(logId: string, updatedLogData: Partial<MonitorLog>): Promise<MonitorLog> {
+    return this.request<MonitorLog>(`/monitor-logs/${logId}`, {
       method: 'PUT',
       body: JSON.stringify(updatedLogData),
     });
   }
 
-  async deleteVolunteerLog(logId: string): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>(`/volunteer-logs/${logId}`, {
+  async deleteMonitorLog(logId: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/monitor-logs/${logId}`, {
       method: 'DELETE',
     });
   }
@@ -329,8 +329,8 @@ class ApiService {
     return this.request<Task[]>('/tasks');
   }
 
-  async getTasksForVolunteer(volunteerId: string): Promise<Task[]> {
-    return this.request<Task[]>(`/tasks/volunteer/${volunteerId}`);
+  async getTasksForMonitor(monitorId: string): Promise<Task[]> {
+    return this.request<Task[]>(`/tasks/monitor/${monitorId}`);
   }
 
   async createTask(data: Omit<Task, 'id' | 'createdAt' | 'statuses'>): Promise<Task> {
@@ -353,10 +353,10 @@ class ApiService {
     });
   }
 
-  async updateTaskStatus(taskId: string, volunteerId: string, status: TaskStatus): Promise<VolunteerTaskStatus> {
-    return this.request<VolunteerTaskStatus>(`/tasks/${taskId}/status`, {
+  async updateTaskStatus(taskId: string, monitorId: string, status: TaskStatus): Promise<MonitorTaskStatus> {
+    return this.request<MonitorTaskStatus>(`/tasks/${taskId}/status`, {
       method: 'PUT',
-      body: JSON.stringify({ volunteerId, status }),
+      body: JSON.stringify({ monitorId, status }),
     });
   }
 }

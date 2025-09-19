@@ -19,8 +19,8 @@ const getWeekIdentifier = (d: Date): string => {
 const MagazineTracker: React.FC = () => {
     const [magazines, setMagazines] = useState<Magazine[]>([]);
     const [magazineLogs, setMagazineLogs] = useState<MagazineLog[]>([]);
-    const [allVolunteers, setAllVolunteers] = useState<User[]>([]);
-    const [selectedVolunteerId, setSelectedVolunteerId] = useState<string>('ALL');
+    const [allMonitors, setAllMonitors] = useState<User[]>([]);
+    const [selectedMonitorId, setSelectedMonitorId] = useState<string>('ALL');
     const [loading, setLoading] = useState(true);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [newMagazineTitle, setNewMagazineTitle] = useState('');
@@ -38,12 +38,12 @@ const MagazineTracker: React.FC = () => {
             if (user?.role === Role.Librarian) {
                 try {
                     const userData = await api.getAllUsers();
-                    setAllVolunteers(userData);
+                    setAllMonitors(userData.filter(u => u.role === Role.Monitor));
                 } catch {
-                    setAllVolunteers([]);
+                    setAllMonitors([]);
                 }
             } else {
-                setAllVolunteers([]);
+                setAllMonitors([]);
             }
         } catch (e) {
             console.error('Failed to load magazines/logs', e);
@@ -86,7 +86,7 @@ const MagazineTracker: React.FC = () => {
         } else {
             if (!existingLog) return;
             // Permission check for unchecking
-            if (user.role !== Role.Librarian && user.id !== existingLog.checkedByVolunteerId) {
+            if (user.role !== Role.Librarian && user.id !== existingLog.checkedByMonitorId) {
                 alert("You can only uncheck magazines you have checked yourself. Please ask a librarian for assistance.");
                 return;
             }
@@ -117,13 +117,13 @@ const MagazineTracker: React.FC = () => {
 
         // Use name from backend response if available
         let name = 'Unknown';
-        if (log.checkedByVolunteer?.name) {
-            name = log.checkedByVolunteer.name;
+        if (log.checkedByMonitor?.name) {
+            name = log.checkedByMonitor.name;
         } else {
-            // Fallback: try to find name in allVolunteers array or current user
-            const volunteer = [...allVolunteers, user].find(v => v?.id === log.checkedByVolunteerId);
-            if (volunteer?.name) {
-                name = volunteer.name;
+            // Fallback: try to find name in allMonitors array or current user
+            const monitor = [...allMonitors, user].find(v => v?.id === log.checkedByMonitorId);
+            if (monitor?.name) {
+                name = monitor.name;
             }
         }
 
@@ -149,14 +149,14 @@ const MagazineTracker: React.FC = () => {
                 const log = magazineLogs.find(l => l.magazineId === mag.id && l.weekIdentifier === week.identifier);
                 if (log) {
                     // Use name from backend response if available
-                    let volunteerName = 'Unknown';
-                    if (log.checkedByVolunteer?.name) {
-                        volunteerName = log.checkedByVolunteer.name;
+                    let monitorName = 'Unknown';
+                    if (log.checkedByMonitor?.name) {
+                        monitorName = log.checkedByMonitor.name;
                     } else {
-                        // Fallback: try to find name in allVolunteers array or current user
-                        const volunteer = [...allVolunteers, user].find(v => v?.id === log.checkedByVolunteerId);
-                        if (volunteer?.name) {
-                            volunteerName = volunteer.name;
+                        // Fallback: try to find name in allMonitors array or current user
+                        const monitor = [...allMonitors, user].find(v => v?.id === log.checkedByMonitorId);
+                        if (monitor?.name) {
+                            monitorName = monitor.name;
                         }
                     }
 
@@ -164,7 +164,7 @@ const MagazineTracker: React.FC = () => {
                     const rowData = [
                         `"${mag.title.replace(/"/g, '""')}"`,
                         week.identifier,
-                        `"${volunteerName.replace(/"/g, '""')}"`,
+                        `"${monitorName.replace(/"/g, '""')}"`,
                         new Date(log.timestamp).toLocaleString()
                     ];
                     rows.push(rowData.join(','));
@@ -229,7 +229,7 @@ const MagazineTracker: React.FC = () => {
                                         const isChecked = !!logInfo?.checked;
                                         let canUncheck = false;
                                         if (isChecked && user && logInfo?.log) {
-                                            canUncheck = user.role === Role.Librarian || user.id === logInfo.log.checkedByVolunteerId;
+                                            canUncheck = user.role === Role.Librarian || user.id === logInfo.log.checkedByMonitorId;
                                         }
                                         const canCheck = !isChecked;
                                         return (
