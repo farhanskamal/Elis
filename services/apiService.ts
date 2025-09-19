@@ -139,10 +139,10 @@ class ApiService {
     return this.request<User>(`/users/${id}`);
   }
 
-  async updateUser(userId: string, name?: string, email?: string, password?: string, profilePicture?: string, backgroundColor?: string, role?: Role): Promise<User> {
+  async updateUser(userId: string, name?: string, email?: string, password?: string, profilePicture?: string, backgroundColor?: string, role?: Role, themePreferences?: any): Promise<User> {
     return this.request<User>(`/users/${userId}`, {
       method: 'PUT',
-      body: JSON.stringify({ name, email, password, profilePicture, backgroundColor, role }),
+      body: JSON.stringify({ name, email, password, profilePicture, backgroundColor, role, themePreferences }),
     });
   }
 
@@ -168,7 +168,7 @@ class ApiService {
     });
   }
 
-  async updateUserPreferences(userId: string, preferences: { profilePicture?: string; backgroundColor?: string }): Promise<User> {
+  async updateUserPreferences(userId: string, preferences: { profilePicture?: string; backgroundColor?: string; themePreferences?: any }): Promise<User> {
     return this.request<User>(`/users/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(preferences),
@@ -274,6 +274,13 @@ class ApiService {
     return this.request<MonitorLog>('/monitor-logs/log-hours', {
       method: 'POST',
       body: JSON.stringify({ monitorId, date, period, code }),
+    });
+  }
+
+  async logHoursByLibrarian(monitorId: string, date: string, period: number, durationMinutes?: number): Promise<MonitorLog> {
+    return this.request<MonitorLog>('/monitor-logs/log-hours-librarian', {
+      method: 'POST',
+      body: JSON.stringify({ monitorId, date, period, durationMinutes }),
     });
   }
 

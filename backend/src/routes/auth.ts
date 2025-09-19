@@ -12,7 +12,17 @@ router.post('/login', strictRateLimit, validate(validationSchemas.login), asyncH
   const { email, password } = req.body;
 
   const user = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      password: true,
+      role: true,
+      profilePicture: true,
+      backgroundColor: true,
+      themePreferences: true
+    }
   });
 
   if (!user) {
@@ -93,7 +103,8 @@ router.get('/verify', async (req, res) => {
         email: true,
         role: true,
         profilePicture: true,
-        backgroundColor: true
+        backgroundColor: true,
+        themePreferences: true
       }
     });
 

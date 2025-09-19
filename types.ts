@@ -11,6 +11,7 @@ export interface User {
   role: Role;
   profilePicture: string;
   backgroundColor?: string;
+  themePreferences?: any; // JSON object containing theme settings
 }
 
 export interface MonitorLog {

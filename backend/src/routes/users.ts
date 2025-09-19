@@ -63,7 +63,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, password, profilePicture, backgroundColor, role } = req.body;
+    const { name, email, password, profilePicture, backgroundColor, themePreferences, role } = req.body;
+    const requester = (req as any).user;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -72,6 +73,13 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     if (!existingUser) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Permission check: users can edit themselves, librarians can edit anyone
+    const isEditingSelf = requester?.id === id;
+    const isLibrarian = requester?.role === 'LIBRARIAN';
+    if (!isEditingSelf && !isLibrarian) {
+      return res.status(403).json({ error: 'You do not have permission to perform this action.' });
     }
 
     // Check if email is being changed and if it's already taken
@@ -90,8 +98,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (email) updateData.email = email;
     if (typeof profilePicture !== 'undefined') updateData.profilePicture = profilePicture;
     if (typeof backgroundColor !== 'undefined') updateData.backgroundColor = backgroundColor;
+    if (typeof themePreferences !== 'undefined') updateData.themePreferences = themePreferences;
     // Only librarians can change roles, safeguard admin email cannot be demoted
-    const requester = (req as any).user;
     if (typeof role !== 'undefined') {
       if (requester?.role !== 'LIBRARIAN') {
         return res.status(403).json({ error: 'Only librarians can change roles' });
@@ -117,6 +125,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         role: true,
         profilePicture: true,
         backgroundColor: true,
+        themePreferences: true,
         createdAt: true
       }
     });

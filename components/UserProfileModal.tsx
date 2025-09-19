@@ -2,7 +2,7 @@ import React, { useState, useContext, useRef } from 'react';
 import { api } from '../services/apiService';
 import { User } from '../types';
 import { AuthContext } from '../context/AuthContext';
-import { ThemeContext } from '../context/ThemeContext';
+import { ThemeContext, Theme } from '../context/ThemeContext';
 import Card from './ui/Card';
 import Button from './ui/Button';
 
@@ -13,15 +13,22 @@ interface Props {
 
 const UserProfileModal: React.FC<Props> = ({ user, onClose }) => {
     const { updateCurrentUser } = useContext(AuthContext);
-    const { setTheme: setThemeCtx } = useContext(ThemeContext);
+    const { theme: currentTheme } = useContext(ThemeContext);
     const [profilePictureUrl, setProfilePictureUrl] = useState(user.profilePicture);
-    const [backgroundColor, setBackgroundColor] = useState(user.backgroundColor || '#f3f4f6');
     const [isSaving, setIsSaving] = useState(false);
     const [name, setName] = useState(user.name);
     const [email, setEmail] = useState(user.email);
     const [password, setPassword] = useState('');
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [selectedTheme, setSelectedTheme] = useState<'system' | 'light' | 'dark' | 'custom'>(user.backgroundColor ? 'custom' : 'system');
+    
+    // Initialize theme settings from user preferences or defaults
+    const userTheme = user.themePreferences || currentTheme;
+    const [theme, setTheme] = useState<Theme>({
+        mode: userTheme.mode || 'system',
+        primary: userTheme.primary || '#2563eb',
+        secondary: userTheme.secondary || '#64748b',
+        background: userTheme.background || '#f9fafb'
+    });
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -46,16 +53,25 @@ const UserProfileModal: React.FC<Props> = ({ user, onClose }) => {
         e.preventDefault();
         setIsSaving(true);
         try {
-            // Save preferences and optional credential updates
-            const updatedUser = await api.updateUser(user.id, name, email, password || undefined, profilePictureUrl, backgroundColor);
+            // Save preferences and optional credential updates with theme preferences
+            // Don't pass role when users are updating their own profiles to avoid 403 errors
+            const updatedUser = await api.updateUser(
+                user.id, 
+                name, 
+                email, 
+                password || undefined, 
+                profilePictureUrl, 
+                user.backgroundColor, // Keep legacy field for backwards compatibility
+                undefined, // Don't pass role for self-updates
+                theme // Save theme preferences
+            );
             updateCurrentUser({ 
                 name: updatedUser.name,
                 email: updatedUser.email,
                 profilePicture: updatedUser.profilePicture,
-                backgroundColor: updatedUser.backgroundColor
+                backgroundColor: updatedUser.backgroundColor,
+                themePreferences: theme // This will trigger theme update in App.tsx
             });
-            // Apply theme globally
-            setThemeCtx({ background: backgroundColor, mode: selectedTheme === 'custom' ? 'light' : selectedTheme });
             onClose();
         } catch (error) {
             console.error("Failed to update profile", error);
@@ -131,35 +147,44 @@ const UserProfileModal: React.FC<Props> = ({ user, onClose }) => {
                             <p className="text-xs text-gray-500">Supports image URLs or uploads (JPEG/PNG/GIF, up to 4MB).</p>
                         </div>
                     </div>
-                     <div>
+                    <div>
                         <label className="block text-sm font-medium text-gray-700">Theme</label>
                         <div className="mt-2 grid grid-cols-4 gap-2">
-                            <button type="button" onClick={() => { setSelectedTheme('system'); setBackgroundColor('#f3f4f6'); }} className={`p-2 rounded-md border ${selectedTheme==='system' ? 'border-blue-500' : 'border-gray-200'} bg-white`}>System</button>
-                            <button type="button" onClick={() => { setSelectedTheme('light'); setBackgroundColor('#ffffff'); }} className={`p-2 rounded-md border ${selectedTheme==='light' ? 'border-blue-500' : 'border-gray-200'} bg-white`}>Light</button>
-                            <button type="button" onClick={() => { setSelectedTheme('dark'); setBackgroundColor('#0f172a'); }} className={`p-2 rounded-md border ${selectedTheme==='dark' ? 'border-blue-500' : 'border-gray-200'} bg-slate-900 text-white`}>Dark</button>
-                            <button type="button" onClick={() => setSelectedTheme('custom')} className={`p-2 rounded-md border ${selectedTheme==='custom' ? 'border-blue-500' : 'border-gray-200'} bg-white`}>Custom</button>
+                            <button type="button" onClick={() => setTheme({ ...theme, mode: 'system' })} className={`p-2 rounded-md border ${theme.mode==='system' ? 'border-blue-500' : 'border-gray-200'} bg-white`}>System</button>
+                            <button type="button" onClick={() => setTheme({ ...theme, mode: 'light' })} className={`p-2 rounded-md border ${theme.mode==='light' ? 'border-blue-500' : 'border-gray-200'} bg-white`}>Light</button>
+                            <button type="button" onClick={() => setTheme({ ...theme, mode: 'dark' })} className={`p-2 rounded-md border ${theme.mode==='dark' ? 'border-blue-500' : 'border-gray-200'} bg-slate-900 text-white`}>Dark</button>
                         </div>
-                        {selectedTheme === 'custom' && (
-                            <div className="mt-3 flex items-center space-x-2">
+                        <div className="mt-3 grid grid-cols-3 gap-3">
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Primary</label>
                                 <input
-                                    id="bg-color"
                                     type="color"
-                                    value={backgroundColor}
-                                    onChange={(e) => setBackgroundColor(e.target.value)}
-                                    className="h-10 w-10 p-1 border rounded-md"
-                                />
-                                <input
-                                    type="text"
-                                    value={backgroundColor}
-                                    onChange={(e) => setBackgroundColor(e.target.value)}
-                                    className="w-full p-2 border rounded-md"
-                                    placeholder="#f3f4f6"
+                                    value={theme.primary}
+                                    onChange={(e) => setTheme({ ...theme, primary: e.target.value })}
+                                    className="h-10 w-full p-1 border rounded-md"
                                 />
                             </div>
-                        )}
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Secondary</label>
+                                <input
+                                    type="color"
+                                    value={theme.secondary}
+                                    onChange={(e) => setTheme({ ...theme, secondary: e.target.value })}
+                                    className="h-10 w-full p-1 border rounded-md"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Background</label>
+                                <input
+                                    type="color"
+                                    value={theme.background}
+                                    onChange={(e) => setTheme({ ...theme, background: e.target.value })}
+                                    className="h-10 w-full p-1 border rounded-md"
+                                />
+                            </div>
+                        </div>
                         <div className="mt-3 flex gap-2">
-                            <Button type="button" variant="secondary" onClick={() => { setSelectedTheme('system'); setBackgroundColor('#f3f4f6'); }}>Reset</Button>
-                            <Button type="button" variant="secondary" onClick={() => { setSelectedTheme('custom'); }}>Use Picker</Button>
+                            <Button type="button" variant="secondary" onClick={() => setTheme({ mode: 'system', primary: '#2563eb', secondary: '#64748b', background: '#f9fafb' })}>Reset</Button>
                         </div>
                     </div>
                     <div className="flex justify-end space-x-2 pt-2">

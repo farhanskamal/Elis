@@ -167,6 +167,96 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
   }
 });
 
+// Log hours for a monitor (librarian only - no check-in code required)
+router.post('/log-hours-librarian', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
+  try {
+    const { monitorId, date, period, durationMinutes } = req.body;
+    const librarianId = (req as any).user.id;
+
+    if (!monitorId || !date || !period) {
+      return res.status(400).json({ error: 'Monitor ID, date, and period are required' });
+    }
+
+    // Check if monitor exists
+    const monitor = await prisma.user.findUnique({
+      where: { id: monitorId },
+      select: { name: true, role: true }
+    });
+
+    if (!monitor) {
+      return res.status(404).json({ error: 'Monitor not found' });
+    }
+
+    if (monitor.role !== 'MONITOR') {
+      return res.status(400).json({ error: 'User is not a monitor' });
+    }
+
+    // Check if already logged
+    const existingLog = await prisma.monitorLog.findUnique({
+      where: {
+        monitorId_date_period: {
+          monitorId: monitorId,
+          date,
+          period
+        }
+      }
+    });
+
+    if (existingLog) {
+      return res.status(400).json({ error: 'Hours for this monitor, date, and period have already been logged' });
+    }
+
+    // Use provided duration or get from period definition
+    let finalDurationMinutes = durationMinutes;
+    if (!finalDurationMinutes) {
+      const periodDefinition = await prisma.periodDefinition.findUnique({
+        where: { period }
+      });
+      finalDurationMinutes = periodDefinition?.duration || 50;
+    }
+
+    const log = await prisma.monitorLog.create({
+      data: {
+        monitorId: monitorId,
+        monitorName: monitor.name,
+        date,
+        period,
+        checkIn: 'Added by Librarian',
+        checkOut: 'Added by Librarian',
+        durationMinutes: finalDurationMinutes
+      },
+      include: {
+        monitor: {
+          select: {
+            id: true,
+            name: true,
+            profilePicture: true
+          }
+        }
+      }
+    });
+
+    // Create audit log for librarian action
+    try {
+      await prisma.auditLog.create({
+        data: {
+          actorId: librarianId,
+          targetUserId: monitorId,
+          action: 'HOURS_ADDED_BY_LIBRARIAN',
+          details: JSON.stringify({ date, period, durationMinutes: finalDurationMinutes }),
+        }
+      });
+    } catch (e) {
+      console.error('Audit log error:', e);
+    }
+
+    res.status(201).json(log);
+  } catch (error) {
+    console.error('Log hours by librarian error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Delete monitor log (librarian only)
 router.delete('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {

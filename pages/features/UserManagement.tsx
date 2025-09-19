@@ -156,6 +156,7 @@ const UserManagement: React.FC = () => {
                               formState.profilePicture,
                               formState.backgroundColor,
                               formState.role,
+                              editingMonitor.themePreferences // Preserve existing theme preferences
                             );
                             setEditingMonitor(null);
                             fetchMonitors();

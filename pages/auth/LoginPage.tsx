@@ -31,7 +31,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ initialError }) => {
         <div className="text-center">
             <img src="/TaehsLibraryLogo.png" alt="Library Logo" className="w-16 h-16 mx-auto" />
           <h1 className="mt-4 text-3xl font-extrabold text-gray-900">
-            Library Volunteer Hub
+            Library Monitor Hub
           </h1>
           <p className="mt-2 text-sm text-gray-600">
             Sign in to your account
@@ -82,15 +82,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ initialError }) => {
             </Button>
           </div>
         </form>
-         <div className="text-sm text-gray-500 bg-gray-100 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-700">Testing Credentials:</h4>
-            <p className="mt-2"><b>Librarian:</b><br />
-            Email: <code className="bg-gray-200 p-1 rounded">admin@school.edu</code><br />
-            Password: <code className="bg-gray-200 p-1 rounded">password123</code></p>
-            <p className="mt-2"><b>Volunteer:</b><br />
-            Email: <code className="bg-gray-200 p-1 rounded">ben@student.school.edu</code><br />
-            Password: <code className="bg-gray-200 p-1 rounded">password123</code></p>
-        </div>
       </div>
     </div>
   );

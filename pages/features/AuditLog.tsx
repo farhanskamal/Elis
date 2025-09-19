@@ -4,9 +4,11 @@ import Card from '../../components/ui/Card';
 import Spinner from '../../components/ui/Spinner';
 import Button from '../../components/ui/Button';
 import { AuthContext } from '../../context/AuthContext';
+import { formatAuditLogEntry, getActionTypeColor, AuditLogEntry, FormattedAuditEntry } from '../../utils/auditLogFormatter';
 
 const AuditLog: React.FC = () => {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [formattedLogs, setFormattedLogs] = useState<FormattedAuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
@@ -18,6 +20,9 @@ const AuditLog: React.FC = () => {
       try {
         const data = await api.getAuditLogs();
         setLogs(data);
+        // Format the logs for display
+        const formatted = data.map(formatAuditLogEntry);
+        setFormattedLogs(formatted);
       } catch (e) {
         console.error('Failed to load audit logs', e);
       } finally {
@@ -60,26 +65,61 @@ const AuditLog: React.FC = () => {
               <thead className="text-xs uppercase bg-gray-50">
                 <tr>
                   <th className="px-4 py-3">Time</th>
-                  <th className="px-4 py-3">Actor</th>
+                  <th className="px-4 py-3">User</th>
                   <th className="px-4 py-3">Action</th>
                   <th className="px-4 py-3">Target</th>
-                  <th className="px-4 py-3">Details</th>
+                  <th className="px-4 py-3">Description</th>
                 </tr>
               </thead>
               <tbody>
-                {logs.map((log) => (
-                  <tr key={log.id} className="bg-white border-b">
-                    <td className="px-4 py-3">{new Date(log.createdAt).toLocaleString()}</td>
-                    <td className="px-4 py-3">{log.actor?.name} ({log.actor?.email})</td>
-                    <td className="px-4 py-3">{log.action}</td>
-                    <td className="px-4 py-3">{log.targetUser ? `${log.targetUser.name} (${log.targetUser.email})` : '-'}</td>
+                {formattedLogs.map((log) => (
+                  <tr key={log.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-sm text-gray-500">
+                      {log.timestamp}
+                    </td>
                     <td className="px-4 py-3">
-                      <pre className="whitespace-pre-wrap text-xs text-gray-600">{log.details}</pre>
+                      <div className="font-medium text-gray-900">
+                        {log.actor.split('(')[0].trim()}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {log.actor.match(/\((.+)\)/)?.[1]}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getActionTypeColor(log.actionType)}`}>
+                        <span className="mr-1">{log.icon}</span>
+                        {log.action}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {log.target !== '-' ? (
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {log.target.split('(')[0].trim()}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {log.target.match(/\((.+)\)/)?.[1]}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-gray-900">
+                        {log.message}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {formattedLogs.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <div className="text-4xl mb-2">📝</div>
+                <p>No audit logs found</p>
+              </div>
+            )}
           </div>
         )}
       </Card>
