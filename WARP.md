@@ -112,18 +112,44 @@ npm run test-api
 
 ### Deployment Commands
 ```bash
-# Start Cloudflare tunnel (run from project root)
+# Use the management script for easy deployment
+manage.bat start          # Start all services
+manage.bat stop           # Stop all services
+manage.bat restart        # Restart all services
+manage.bat status         # Check service status
+manage.bat build          # Build the project
+
+# Maintenance mode
+manage.bat maintenance on "Database upgrade in progress"
+manage.bat maintenance off
+
+# Manual commands (if needed)
 .\cloudflared.exe tunnel run
-
-# Start Caddy reverse proxy (run from backend directory)
-cd backend
-.\caddy_windows_amd64.exe run
-
-# Build and deploy full stack
-npm run build
-npm run backend:build
-npm run backend:start
+cd backend && .\caddy_windows_amd64.exe run
+npm run build && npm run backend:build && npm run backend:start
 ```
+
+## Production Features
+
+### Concurrent User Management
+- **Maximum 45 concurrent users** enforced at the server level
+- Automatic connection cleanup after 30 minutes of inactivity
+- Server capacity endpoint: `/capacity`
+- Graceful handling when at capacity with user-friendly messages
+
+### Maintenance Mode System
+- Isolated maintenance page with custom reasons
+- Automatic Caddyfile switching during maintenance
+- Real-time status checking and auto-redirect when back online
+- Zero impact on main project files during maintenance
+
+### Management Script (`manage.bat`)
+- **Start/Stop/Restart** all services with one command
+- **Status monitoring** for all services (backend, caddy, cloudflared)
+- **Maintenance mode** with custom messages
+- **Log viewing** for debugging
+- **Health checks** and accessibility testing
+- **Automatic build** and deployment
 
 ## Key Development Patterns
 
@@ -178,6 +204,13 @@ VITE_API_URL=http://localhost:3001/api
 # Production (via Cloudflare tunnel)
 VITE_API_URL=https://letstestit.me/api
 ```
+
+### CORS Configuration
+The Caddyfile is configured to handle CORS properly for the domain:
+- **API requests**: Routed through `/api/*` with proper CORS headers
+- **Frontend files**: Served from `dist/` directory with SPA routing
+- **Preflight requests**: Handled automatically with OPTIONS method
+- **Domain**: `https://letstestit.me` with proper Access-Control headers
 
 ### Backend (.env)
 ```bash

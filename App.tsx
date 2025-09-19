@@ -6,6 +6,7 @@ import { AuthContext } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationsProvider } from './context/NotificationsContext';
 import NotificationsToaster from './components/NotificationsToaster';
+import ErrorBoundary from './components/ErrorBoundary';
 import { User, Role } from './types';
 import { api } from './services/apiService';
 
@@ -62,16 +63,18 @@ const App: React.FC = () => {
   };
 
   return (
-    <AuthContext.Provider value={authContextValue}>
-      <ThemeProvider>
-        <NotificationsProvider>
-          <div className="min-h-screen text-gray-800" style={{ backgroundColor: 'var(--color-bg)' }}>
-            {currentUser ? renderDashboard() : <LoginPage initialError={error} />}
-            <NotificationsToaster/>
-          </div>
-        </NotificationsProvider>
-      </ThemeProvider>
-    </AuthContext.Provider>
+    <ErrorBoundary>
+      <AuthContext.Provider value={authContextValue}>
+        <ThemeProvider>
+          <NotificationsProvider>
+            <div className="min-h-screen text-gray-800" style={{ backgroundColor: 'var(--color-bg)' }}>
+              {currentUser ? renderDashboard() : <LoginPage initialError={error} />}
+              <NotificationsToaster/>
+            </div>
+          </NotificationsProvider>
+        </ThemeProvider>
+      </AuthContext.Provider>
+    </ErrorBoundary>
   );
 };
 

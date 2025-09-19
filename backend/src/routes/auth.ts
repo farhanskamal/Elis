@@ -2,92 +2,76 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
+import { validate, validationSchemas, strictRateLimit } from '../middleware/validation';
+import { asyncHandler } from '../middleware/errorHandler';
 
 const router = express.Router();
 
 // Login
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
+router.post('/login', strictRateLimit, validate(validationSchemas.login), asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
 
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: '24h' }
-    );
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
-
-    res.json({
-      user: userWithoutPassword,
-      token
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid email or password' });
   }
-});
+
+  const isValidPassword = await bcrypt.compare(password, user.password);
+  if (!isValidPassword) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+
+  const token = jwt.sign(
+    { userId: user.id, email: user.email, role: user.role },
+    process.env.JWT_SECRET!,
+    { expiresIn: '24h' }
+  );
+
+  // Remove password from response
+  const { password: _, ...userWithoutPassword } = user;
+
+  res.json({
+    user: userWithoutPassword,
+    token
+  });
+}));
 
 // Register (for creating new volunteers)
-router.post('/register', async (req, res) => {
-  try {
-    const { name, email, password, role = 'VOLUNTEER' } = req.body;
+router.post('/register', strictRateLimit, validate(validationSchemas.register), asyncHandler(async (req, res) => {
+  const { name, email, password, role = 'VOLUNTEER' } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
-    }
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email }
+  });
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ error: 'User with this email already exists' });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: role as any,
-        profilePicture: `https://picsum.photos/seed/${name}/100/100`,
-        backgroundColor: '#f3f4f6'
-      }
-    });
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
-
-    res.status(201).json({ user: userWithoutPassword });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  if (existingUser) {
+    return res.status(400).json({ error: 'User with this email already exists' });
   }
-});
+
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  // Create user
+  const user = await prisma.user.create({
+    data: {
+      name,
+      email,
+      password: hashedPassword,
+      role: role as any,
+      profilePicture: `https://picsum.photos/seed/${name}/100/100`,
+      backgroundColor: '#f3f4f6'
+    }
+  });
+
+  // Remove password from response
+  const { password: _, ...userWithoutPassword } = user;
+
+  res.status(201).json({ user: userWithoutPassword });
+}));
 
 // Verify token
 router.get('/verify', async (req, res) => {

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Volunteer Hub - Maintenance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .maintenance-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 2rem;
+            background: #f8fafc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .icon svg {
+            width: 40px;
+            height: 40px;
+            color: #667eea;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #1f2937;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+
+        .reason {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            color: #92400e;
+        }
+
+        .reason-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .reason-text {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .details {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .details h3 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .details ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .details li {
+            padding: 0.5rem 0;
+            color: #4b5563;
+            display: flex;
+            align-items: center;
+        }
+
+        .details li::before {
+            content: "•";
+            color: #667eea;
+            font-size: 1.5rem;
+            margin-right: 0.75rem;
+        }
+
+        .contact-info {
+            background: #ecfdf5;
+            border: 1px solid #10b981;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            color: #065f46;
+        }
+
+        .contact-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin: 1rem 0;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #dc2626;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+
+        .refresh-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+
+        .timestamp {
+            color: #9ca3af;
+            font-size: 0.875rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .maintenance-container {
+                padding: 2rem 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="maintenance-container">
+        <div class="icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </div>
+
+        <h1>Under Maintenance</h1>
+        <div class="subtitle">Library Volunteer Hub</div>
+
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            Service Temporarily Unavailable
+        </div>
+
+        <div class="reason" id="reasonSection" style="display: none;">
+            <div class="reason-title">Maintenance Reason</div>
+            <div class="reason-text" id="reasonText">System maintenance in progress</div>
+        </div>
+
+        <div class="details">
+            <h3>What's happening?</h3>
+            <ul>
+                <li>The system is temporarily offline for maintenance</li>
+                <li>All your data is safe and secure</li>
+                <li>Normal operations will resume shortly</li>
+                <li>No action is required from users</li>
+            </ul>
+        </div>
+
+        <div class="contact-info">
+            <div class="contact-title">Need immediate assistance?</div>
+            Contact your librarian or system administrator for urgent matters.
+        </div>
+
+        <button class="refresh-btn" onclick="window.location.reload()">
+            Check Status
+        </button>
+
+        <div class="timestamp" id="timestamp">
+            Last updated: <span id="currentTime"></span>
+        </div>
+    </div>
+
+    <script>
+        // Update timestamp
+        function updateTimestamp() {
+            document.getElementById('currentTime').textContent = new Date().toLocaleString();
+        }
+
+        // Check for reason in URL parameters
+        function checkMaintenanceReason() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const reason = urlParams.get('reason');
+            
+            if (reason) {
+                document.getElementById('reasonSection').style.display = 'block';
+                document.getElementById('reasonText').textContent = decodeURIComponent(reason);
+            }
+        }
+
+        // Auto refresh every 30 seconds to check if service is back
+        function autoRefresh() {
+            setTimeout(() => {
+                // Try to fetch the main site to see if it's back online
+                fetch('/', { method: 'HEAD', mode: 'no-cors' })
+                    .then(() => {
+                        // If successful, reload to main site
+                        window.location.href = '/';
+                    })
+                    .catch(() => {
+                        // Still in maintenance, refresh this page
+                        updateTimestamp();
+                        autoRefresh();
+                    });
+            }, 30000); // Check every 30 seconds
+        }
+
+        // Initialize
+        updateTimestamp();
+        checkMaintenanceReason();
+        autoRefresh();
+    </script>
+</body>
+</html>

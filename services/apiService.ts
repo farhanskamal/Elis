@@ -12,32 +12,94 @@ class ApiService {
         ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
+      timeout: 30000, // 30 second timeout
       ...options,
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...config,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
 
+      // Handle rate limiting with exponential backoff
       if (response.status === 429 && retries > 0) {
-        // Exponential backoff: wait 1s, 2s, 4s...
         const delay = Math.pow(2, 4 - retries) * 1000;
         await new Promise(resolve => setTimeout(resolve, delay));
         return this.request<T>(endpoint, options, retries - 1);
+      }
+
+      // Handle unauthorized - clear token and redirect to login
+      if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        window.location.href = '/';
+        throw new Error('Your session has expired. Please log in again.');
       }
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Network error' }));
-        throw new Error(error.error || `HTTP ${response.status}`);
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        
+        // Provide user-friendly error messages
+        const errorMessage = this.getErrorMessage(response.status, errorData);
+        throw new Error(errorMessage);
       }
 
-      return response.json();
+      // Handle empty responses
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json();
+      } else {
+        return response.text() as unknown as T;
+      }
     } catch (error) {
-      if (retries > 0 && (error as Error).message.includes('429')) {
-        const delay = Math.pow(2, 4 - retries) * 1000;
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return this.request<T>(endpoint, options, retries - 1);
+      // Handle network errors and retries
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw new Error('Request timed out. Please check your connection and try again.');
+        }
+        
+        // Retry on network errors (but not on 4xx/5xx HTTP errors)
+        if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+          const delay = Math.pow(2, 4 - retries) * 1000;
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return this.request<T>(endpoint, options, retries - 1);
+        }
       }
       throw error;
+    }
+  }
+
+  private getErrorMessage(status: number, errorData: any): string {
+    // Provide user-friendly error messages based on status codes
+    switch (status) {
+      case 400:
+        return errorData.error || 'Invalid request. Please check your input and try again.';
+      case 401:
+        return 'Authentication required. Please log in.';
+      case 403:
+        return 'You do not have permission to perform this action.';
+      case 404:
+        return 'The requested resource was not found.';
+      case 409:
+        return errorData.error || 'This operation conflicts with existing data.';
+      case 429:
+        return 'Too many requests. Please wait a moment and try again.';
+      case 500:
+        return 'Internal server error. Please try again later.';
+      case 503:
+        return 'Service temporarily unavailable. Please try again later.';
+      default:
+        return errorData.error || `An unexpected error occurred (${status}).`;
     }
   }
 

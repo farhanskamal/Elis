@@ -1,8 +1,30 @@
 :80 {
 	encode gzip zstd
-	root * "C:\Users\Mafius\Documents\Projects\Personal\Elis\dist"
-	file_server
+	
+	# Handle API requests
 	handle_path /api/* {
+		# Add CORS headers for API requests
+		header Access-Control-Allow-Origin https://letstestit.me
+		header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+		header Access-Control-Allow-Headers "Content-Type, Authorization"
+		header Access-Control-Allow-Credentials true
+		
+		# Handle preflight OPTIONS requests
+		@options method OPTIONS
+		handle @options {
+			header Access-Control-Allow-Origin https://letstestit.me
+			header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+			header Access-Control-Allow-Headers "Content-Type, Authorization"
+			header Access-Control-Allow-Credentials true
+			header Access-Control-Max-Age 86400
+			respond "" 200
+		}
+		
 		reverse_proxy 127.0.0.1:3001
 	}
+	
+	# Serve frontend files
+	root * "C:\Users\Mafius\Documents\Projects\Personal\Elis-dev\dist"
+	try_files {path} /index.html
+	file_server
 }

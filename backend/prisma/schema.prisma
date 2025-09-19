@@ -48,6 +48,9 @@ model User {
   auditActorLogs    AuditLog[]        @relation("AuditActor")
   auditTargetLogs   AuditLog[]        @relation("AuditTarget")
 
+  @@index([role])
+  @@index([email])
+  @@index([createdAt])
   @@map("users")
 }
 
@@ -62,6 +65,8 @@ model Shift {
   assignments ShiftAssignment[]
 
   @@unique([date, period])
+  @@index([date])
+  @@index([period])
   @@map("shifts")
 }
 
@@ -116,6 +121,9 @@ model VolunteerLog {
   volunteer User @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
 
   @@unique([volunteerId, date, period])
+  @@index([volunteerId])
+  @@index([date])
+  @@index([createdAt])
   @@map("volunteer_logs")
 }
 
@@ -131,6 +139,8 @@ model Announcement {
 
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
+  @@index([authorId])
+  @@index([createdAt])
   @@map("announcements")
 }
 
@@ -148,6 +158,9 @@ model Task {
   assignments TaskAssignment[]
   statuses    TaskStatusRecord[]
 
+  @@index([priority])
+  @@index([dueDate])
+  @@index([createdAt])
   @@map("tasks")
 }
 
@@ -196,6 +209,8 @@ model CheckinCode {
   createdAt DateTime @default(now())
   expiresAt DateTime
 
+  @@index([expiresAt])
+  @@index([code])
   @@map("checkin_codes")
 }
 

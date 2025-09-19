@@ -3,7 +3,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import compression from 'compression';
 import { prisma } from './lib/prisma';
+import { errorHandler, notFoundHandler, handleUnhandledRejection, handleUncaughtException } from './middleware/errorHandler';
+import { monitorConnectionPool, startCleanupScheduler, checkDatabaseHealth } from './lib/transactions';
+import { connectionLimiter, capacityCheck, getConnectionStats } from './middleware/connectionLimiter';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -20,6 +24,10 @@ import notificationRoutes from './routes/notifications';
 
 dotenv.config();
 
+// Set up global error handlers
+handleUncaughtException();
+handleUnhandledRejection();
+
 const app = express();
 app.set('trust proxy', 1); // Trust only the immediate proxy (Cloudflare) for accurate IP detection with rate limiting
 const PORT = process.env.PORT || 3001;
@@ -35,7 +43,22 @@ const limiter = rateLimit({
 });
 
 // Middleware
-app.use(helmet());
+app.use(compression()); // Compress responses
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+}));
 if (process.env.NODE_ENV === 'production') {
   app.use(limiter);
 }
@@ -50,6 +73,9 @@ const defaultProdOrigins = [
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [...defaultProdOrigins, ...envOrigins]
   : [...localOrigins, 'https://letstestit.me']; // Allow production origin in dev for testing
+
+console.log('CORS allowed origins:', allowedOrigins);
+console.log('NODE_ENV:', process.env.NODE_ENV);
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
@@ -91,10 +117,47 @@ app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+// Apply connection limiter (max 45 concurrent users)
+app.use(connectionLimiter);
+
+// Health check with database connectivity
+app.get('/health', async (req, res) => {
+  try {
+    const dbHealth = await checkDatabaseHealth();
+    const connectionStats = getConnectionStats();
+    const health = {
+      status: dbHealth.healthy ? 'OK' : 'UNHEALTHY',
+      timestamp: new Date().toISOString(),
+      database: {
+        healthy: dbHealth.healthy,
+        latency: `${dbHealth.latency}ms`
+      },
+      connections: {
+        active: connectionStats.active,
+        maximum: connectionStats.max,
+        utilization: `${connectionStats.utilization}%`
+      },
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      nodeVersion: process.version
+    };
+    
+    if (!dbHealth.healthy) {
+      return res.status(503).json(health);
+    }
+    
+    res.json(health);
+  } catch (error) {
+    res.status(503).json({
+      status: 'UNHEALTHY',
+      timestamp: new Date().toISOString(),
+      error: 'Health check failed'
+    });
+  }
 });
+
+// Capacity check endpoint
+app.get('/capacity', capacityCheck);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -109,19 +172,11 @@ app.use('/api/checkin', checkinRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-  });
-});
+// 404 handler for unknown routes
+app.use('*', notFoundHandler);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
@@ -139,6 +194,13 @@ process.on('SIGTERM', async () => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  
+  // Initialize monitoring and cleanup in production
+  if (process.env.NODE_ENV === 'production') {
+    monitorConnectionPool();
+    startCleanupScheduler();
+    console.log('📈 Database monitoring and cleanup scheduler started');
+  }
 });
 
 export default app;
