@@ -191,9 +191,13 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+// Get host configuration from environment or default to 0.0.0.0 for remote access
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Server running on ${HOST}:${PORT}`);
+  console.log(`📊 Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/health`);
+  console.log(`🌐 Server accessible from: ${HOST === '0.0.0.0' ? 'all network interfaces' : HOST}`);
   
   // Initialize monitoring and cleanup in production
   if (process.env.NODE_ENV === 'production') {
