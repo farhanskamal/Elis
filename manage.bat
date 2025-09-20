@@ -83,6 +83,34 @@ goto :end
 echo %GREEN%🚀 Starting Library Monitor Hub services...%RESET%
 echo.
 
+REM Check backend configuration
+echo %BLUE%🔧 Checking backend configuration...%RESET%
+cd /d "%BACKEND_DIR%"
+if exist .env (
+    findstr /i "HOST=" .env >nul 2>&1
+    if !errorlevel!==0 (
+        findstr /i "HOST=\"0.0.0.0\"" .env >nul 2>&1
+        if !errorlevel!==0 (
+            echo %CYAN%   Host binding: 0.0.0.0%RESET%
+            echo %GREEN%   ✅ Remote access enabled%RESET%
+        ) else (
+            findstr /i "HOST=\"127.0.0.1\"" .env >nul 2>&1
+            if !errorlevel!==0 (
+                echo %CYAN%   Host binding: 127.0.0.1%RESET%
+                echo %YELLOW%   ⚠️  Localhost only mode%RESET%
+            ) else (
+                echo %CYAN%   Host binding: Custom configuration%RESET%
+                echo %CYAN%   🌐 Check your .env file%RESET%
+            )
+        )
+    ) else (
+        echo %YELLOW%   ⚠️  HOST not configured, using default (0.0.0.0)%RESET%
+    )
+) else (
+    echo %RED%   ❌ .env file not found!%RESET%
+)
+echo.
+
 REM Check if already running
 call :check_service_status
 if !BACKEND_RUNNING!==1 (
@@ -129,7 +157,9 @@ if !CLOUDFLARED_RUNNING!==1 (
 
 echo.
 echo %GREEN%🎉 All services started successfully!%RESET%
-echo %CYAN%🌐 Website should be available at: https://letstestit.me%RESET%
+echo %CYAN%🌐 Website available at: https://letstestit.me%RESET%
+echo %BLUE%📡 Backend API: https://letstestit.me/api/%RESET%
+echo %WHITE%📊 Health check: https://letstestit.me/api/health%RESET%
 echo.
 goto :end
 
@@ -194,15 +224,49 @@ if exist "%MAINTENANCE_DIR%\active" (
     echo   Maintenance: %GREEN%🟢 Disabled%RESET%
 )
 
+REM Show remote access configuration
+echo.
+echo %CYAN%🌐 Remote Access Configuration:%RESET%
+cd /d "%BACKEND_DIR%"
+if exist .env (
+    findstr /i "HOST=" .env >nul 2>&1
+    if !errorlevel!==0 (
+        findstr /i "HOST=\"0.0.0.0\"" .env >nul 2>&1
+        if !errorlevel!==0 (
+            echo   Host Binding: %GREEN%🟢 All interfaces (Remote access enabled)%RESET%
+        ) else (
+            findstr /i "HOST=\"127.0.0.1\"" .env >nul 2>&1
+            if !errorlevel!==0 (
+                echo   Host Binding: %YELLOW%🟡 Localhost only%RESET%
+            ) else (
+                echo   Host Binding: %CYAN%🌐 Custom configuration%RESET%
+            )
+        )
+    ) else (
+        echo   Host Binding: %GREEN%🟢 Default (0.0.0.0 - Remote access enabled)%RESET%
+    )
+) else (
+    echo   Host Binding: %RED%🔴 .env file missing%RESET%
+)
+
 echo.
 
 REM Check if website is accessible
-echo %BLUE%🔍 Checking website accessibility...%RESET%
-curl -s --max-time 10 "https://letstestit.me/health" >nul 2>&1
+echo %BLUE%🔍 Checking accessibility...%RESET%
+curl -s --max-time 10 "https://letstestit.me/api/health" >nul 2>&1
 if !errorlevel!==0 (
-    echo   Website:     %GREEN%🟢 Accessible at https://letstestit.me%RESET%
+    echo   Public API:  %GREEN%🟢 https://letstestit.me/api/%RESET%
 ) else (
-    echo   Website:     %RED%🔴 Not accessible%RESET%
+    echo   Public API:  %RED%🔴 Not accessible%RESET%
+)
+
+REM Check local backend
+echo %BLUE%   Testing local backend...%RESET%
+curl -s --max-time 5 "http://localhost:3001/health" >nul 2>&1
+if !errorlevel!==0 (
+    echo   Local API:   %GREEN%🟢 http://localhost:3001%RESET%
+) else (
+    echo   Local API:   %RED%🔴 Not responding%RESET%
 )
 echo.
 goto :end
@@ -352,20 +416,54 @@ goto :end
 echo %GREEN%🏥 Checking system health...%RESET%
 echo.
 
-curl -s --max-time 10 "https://letstestit.me/health" > "%TEMP%\health.json" 2>nul
+REM Check backend configuration first
+cd /d "%BACKEND_DIR%"
+echo %CYAN%🔧 Backend Configuration:%RESET%
+if exist .env (
+    findstr /i "HOST=" .env >nul 2>&1
+    if !errorlevel!==0 (
+        findstr /i "HOST=\"0.0.0.0\"" .env >nul 2>&1
+        if !errorlevel!==0 (
+            echo   Host: 0.0.0.0 (All interfaces)
+        ) else (
+            findstr /i "HOST=\"127.0.0.1\"" .env >nul 2>&1
+            if !errorlevel!==0 (
+                echo   Host: 127.0.0.1 (Localhost only)
+            ) else (
+                echo   Host: Custom configuration
+            )
+        )
+    ) else (
+        echo   Host: Default (0.0.0.0)
+    )
+) else (
+    echo   %RED%❌ .env file missing!%RESET%
+)
+echo.
+
+REM Test public API endpoint
+echo %BLUE%🌐 Testing public API...%RESET%
+curl -s --max-time 10 "https://letstestit.me/api/health" > "%TEMP%\health.json" 2>nul
 if !errorlevel!==0 (
-    echo %GREEN%✅ Website is healthy%RESET%
+    echo %GREEN%✅ Public API is healthy%RESET%
+    echo %CYAN%Response:%RESET%
     type "%TEMP%\health.json"
     del "%TEMP%\health.json" >nul 2>&1
+echo.
 ) else (
-    echo %RED%❌ Website health check failed%RESET%
-    echo %YELLOW%Trying local backend...%RESET%
-    curl -s --max-time 5 "http://localhost:3001/health" 2>nul
-    if !errorlevel!==0 (
-        echo %YELLOW%Backend is running locally but not accessible via domain%RESET%
-    ) else (
-        echo %RED%Backend is not responding%RESET%
-    )
+    echo %RED%❌ Public API health check failed%RESET%
+)
+
+REM Test local backend
+echo %BLUE%📡 Testing local backend...%RESET%
+curl -s --max-time 5 "http://localhost:3001/health" > "%TEMP%\local_health.json" 2>nul
+if !errorlevel!==0 (
+    echo %GREEN%✅ Local backend is responding%RESET%
+    echo %CYAN%Response:%RESET%
+    type "%TEMP%\local_health.json"
+    del "%TEMP%\local_health.json" >nul 2>&1
+) else (
+    echo %RED%❌ Local backend is not responding%RESET%
 )
 echo.
 goto :end

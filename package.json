@@ -4,15 +4,19 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "vite --mode development",
+    "dev:local": "vite --mode development --env-file .env.local",
+    "build": "vite build --mode production",
+    "build:dev": "vite build --mode development",
+    "preview": "vite preview --host",
     "setup-backend": "bash setup-backend.sh",
     "setup-backend-windows": "setup-backend.bat",
     "backend:dev": "cd backend && npm run dev",
     "backend:build": "cd backend && npm run build",
     "backend:start": "cd backend && npm start",
-    "test-api": "node test-api.js"
+    "test-api": "node test-api.js",
+    "start": "npm run build && npm run preview",
+    "deploy": "npm run build && echo Build completed for deployment"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",
