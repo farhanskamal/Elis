@@ -1,4 +1,4 @@
-import { User, Role, Shift, Magazine, MonitorLog, Announcement, Task, TaskPriority, MagazineLog, TaskStatus, MonitorTaskStatus, PeriodDefinition } from '../types';
+import { User, Role, Shift, Magazine, MonitorLog, Announcement, Task, TaskPriority, MagazineLog, TaskStatus, MonitorTaskStatus, PeriodDefinition, EventType, CalendarEvent } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -365,6 +365,51 @@ class ApiService {
       method: 'PUT',
       body: JSON.stringify({ monitorId, status }),
     });
+  }
+
+  // --- EVENT TYPES ---
+  async getEventTypes(): Promise<EventType[]> {
+    return this.request<EventType[]>('/event-types');
+  }
+  async createEventType(data: { name: string; color: string; icon?: string; closesLibrary?: boolean }): Promise<EventType> {
+    return this.request<EventType>('/event-types', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+  async updateEventType(id: string, data: Partial<{ name: string; color: string; icon?: string; closesLibrary?: boolean }>): Promise<EventType> {
+    return this.request<EventType>(`/event-types/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+  async deleteEventType(id: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/event-types/${id}`, { method: 'DELETE' });
+  }
+
+  // --- EVENTS ---
+  async getEventsForMonth(month: string): Promise<CalendarEvent[]> {
+    // month format: YYYY-MM
+    return this.request<CalendarEvent[]>(`/events/month/${month}`);
+  }
+  async getEventsInRange(start: string, end: string): Promise<CalendarEvent[]> {
+    const params = new URLSearchParams({ start, end }).toString();
+    return this.request<CalendarEvent[]>(`/events/range?${params}`);
+  }
+  async createEvent(data: Omit<CalendarEvent, 'id' | 'type' > & { description?: string }): Promise<CalendarEvent> {
+    return this.request<CalendarEvent>('/events', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+  async updateEvent(id: string, data: Partial<Omit<CalendarEvent, 'id' | 'type'>> & { description?: string }): Promise<CalendarEvent> {
+    return this.request<CalendarEvent>(`/events/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+  async deleteEvent(id: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/events/${id}`, { method: 'DELETE' });
   }
 }
 

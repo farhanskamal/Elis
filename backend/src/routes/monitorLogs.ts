@@ -93,12 +93,18 @@ router.post('/log-hours', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Monitor not found' });
     }
 
-    // Get period duration
+    // Get period duration with Wednesday adjustment (Edison schedule)
     const periodDefinition = await prisma.periodDefinition.findUnique({
       where: { period }
     });
 
-    const durationMinutes = periodDefinition?.duration || 50;
+    const day = new Date(date + 'T00:00:00').getDay(); // 0=Sun .. 6=Sat
+    let durationMinutes: number | null = null;
+    if (day === 3) { // Wednesday
+      durationMinutes = period === 0 ? 45 : 40;
+    } else {
+      durationMinutes = periodDefinition?.duration ?? (period === 0 ? 45 : 46);
+    }
 
     const log = await prisma.monitorLog.create({
       data: {
@@ -212,7 +218,12 @@ router.post('/log-hours-librarian', authenticateToken, requireRole(['LIBRARIAN']
       const periodDefinition = await prisma.periodDefinition.findUnique({
         where: { period }
       });
-      finalDurationMinutes = periodDefinition?.duration || 50;
+      const day = new Date(date + 'T00:00:00').getDay();
+      if (day === 3) {
+        finalDurationMinutes = period === 0 ? 45 : 40;
+      } else {
+        finalDurationMinutes = periodDefinition?.duration ?? (period === 0 ? 45 : 46);
+      }
     }
 
     const log = await prisma.monitorLog.create({

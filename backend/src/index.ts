@@ -21,6 +21,8 @@ import periodRoutes from './routes/periods';
 import checkinRoutes from './routes/checkin';
 import auditRoutes from './routes/audit';
 import notificationRoutes from './routes/notifications';
+import eventTypeRoutes from './routes/eventTypes';
+import eventRoutes from './routes/events';
 
 dotenv.config();
 
@@ -30,7 +32,7 @@ handleUnhandledRejection();
 
 const app = express();
 app.set('trust proxy', 1); // Trust only the immediate proxy (Cloudflare) for accurate IP detection with rate limiting
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -171,6 +173,8 @@ app.use('/api/periods', periodRoutes);
 app.use('/api/checkin', checkinRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/event-types', eventTypeRoutes);
+app.use('/api/events', eventRoutes);
 
 // 404 handler for unknown routes
 app.use('*', notFoundHandler);

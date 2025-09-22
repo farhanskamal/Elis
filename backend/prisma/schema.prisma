@@ -8,24 +8,25 @@ datasource db {
 }
 
 model User {
-  id              String             @id @default(cuid())
-  name            String
-  email           String             @unique
-  password        String
-  role            Role
-  profilePicture  String?
-  backgroundColor String?
+  id               String             @id @default(cuid())
+  name             String
+  email            String             @unique
+  password         String
+  role             Role
+  profilePicture   String?
+  backgroundColor  String?
   themePreferences Json?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  announcements   Announcement[]
-  auditActorLogs  AuditLog[]         @relation("AuditActor")
-  auditTargetLogs AuditLog[]         @relation("AuditTarget")
-  magazineLogs    MagazineLog[]
-  monitorLogs     MonitorLog[]
-  shifts          ShiftAssignment[]
-  assignedTasks   TaskAssignment[]
-  taskStatuses    TaskStatusRecord[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  announcements    Announcement[]
+  auditActorLogs   AuditLog[]         @relation("AuditActor")
+  auditTargetLogs  AuditLog[]         @relation("AuditTarget")
+  magazineLogs     MagazineLog[]
+  monitorLogs      MonitorLog[]
+  shifts           ShiftAssignment[]
+  assignedTasks    TaskAssignment[]
+  taskStatuses     TaskStatusRecord[]
+  eventsCreated    CalendarEvent[]    @relation("CalendarEventCreatedBy")
 
   @@index([role])
   @@index([email])
@@ -196,6 +197,40 @@ model AuditLog {
 
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+model EventType {
+  id             String          @id @default(cuid())
+  name           String          @unique
+  color          String
+  icon           String?
+  closesLibrary  Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  events         CalendarEvent[]
+
+  @@map("event_types")
+}
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  title       String
+  typeId      String
+  type        EventType @relation(fields: [typeId], references: [id])
+  startDate   String
+  endDate     String
+  allDay      Boolean  @default(false)
+  periodStart Int?
+  periodEnd   Int?
+  description String?
+  createdById String?
+  createdBy   User?    @relation("CalendarEventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([startDate])
+  @@index([endDate])
+  @@map("calendar_events")
 }
 
 enum Role {

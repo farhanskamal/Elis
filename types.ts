@@ -93,3 +93,24 @@ export interface PeriodDefinition {
   startTime: string; // HH:mm
   endTime: string; // HH:mm
 }
+
+// --- Calendar & Events ---
+export interface EventType {
+  id: string;
+  name: string; // e.g., Closure, Holiday, General Event, Maintenance
+  color: string; // HEX color for display
+  icon?: string; // optional icon key
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  typeId: string;
+  type?: EventType; // populated by backend includes
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD (inclusive)
+  allDay: boolean;
+  periodStart?: number; // for partial-day closures or period-based events
+  periodEnd?: number;
+  description?: string;
+}

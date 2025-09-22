@@ -1,4 +1,5 @@
-# Complete Solution - Start All Services for Remote Access
+# Wrapper: start all services via manage.ps1
+& "$PSScriptRoot\manage.ps1" start
 Write-Host "🚀 Starting all services for remote access..." -ForegroundColor Green
 
 # Stop any existing processes first

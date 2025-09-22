@@ -1,4 +1,5 @@
-# Manual Backend Startup Script
+# Wrapper: start backend in dev mode via manage.ps1
+& "$PSScriptRoot\manage.ps1" dev
 Write-Host "🚀 Starting backend manually with error logging..." -ForegroundColor Green
 
 Set-Location backend

@@ -181,6 +181,41 @@ function Show-Status {
     Write-Host ""
 }
 
+function Start-Caddy {
+    $log = Join-Path $LogsDir "caddy.log"
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c .\caddy_windows_amd64.exe run > `"$log`" 2>&1" -WindowStyle Minimized -WorkingDirectory $BackendDir
+    Write-ColoredText "✅ Caddy started (logging to $log)" "Green"
+}
+
+function Stop-Caddy {
+    Get-Process -Name "caddy_windows_amd64" -ErrorAction SilentlyContinue | Stop-Process -Force
+    Write-ColoredText "✅ Caddy stopped" "Green"
+}
+
+function Restart-Caddy {
+    Stop-Caddy
+    Start-Sleep 2
+    Start-Caddy
+}
+
+function Start-Cloudflared {
+    $log = Join-Path $LogsDir "cloudflared.log"
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c .\cloudflared.exe tunnel run > `"$log`" 2>&1" -WindowStyle Minimized -WorkingDirectory $ProjectRoot
+    Start-Sleep 2
+    Write-ColoredText "✅ Cloudflared started (logging to $log)" "Green"
+}
+
+function Stop-Cloudflared {
+    Get-Process -Name "cloudflared" -ErrorAction SilentlyContinue | Stop-Process -Force
+    Write-ColoredText "✅ Cloudflared stopped" "Green"
+}
+
+function Restart-Cloudflared {
+    Stop-Cloudflared
+    Start-Sleep 2
+    Start-Cloudflared
+}
+
 function Start-Services {
     Write-ColoredText "🚀 Starting Library Monitor Hub services..." "Green"
     Write-Host ""
@@ -222,11 +257,7 @@ function Start-Services {
         Write-ColoredText "⚠️  Caddy is already running" "Yellow"
     } else {
         Write-ColoredText "🌐 Starting Caddy reverse proxy..." "Blue"
-        Push-Location $BackendDir
-        Start-Process -FilePath ".\caddy_windows_amd64.exe" -ArgumentList "run" -WindowStyle Minimized
-        Start-Sleep 2
-        Pop-Location
-        Write-ColoredText "✅ Caddy started" "Green"
+        Start-Caddy
     }
     
     # Start Cloudflare Tunnel
@@ -234,9 +265,7 @@ function Start-Services {
         Write-ColoredText "⚠️  Cloudflare tunnel is already running" "Yellow"
     } else {
         Write-ColoredText "☁️  Starting Cloudflare tunnel..." "Blue"
-        Start-Process -FilePath ".\cloudflared.exe" -ArgumentList "tunnel", "run" -WindowStyle Minimized
-        Start-Sleep 3
-        Write-ColoredText "✅ Cloudflare tunnel started" "Green"
+        Start-Cloudflared
     }
     
     Write-Host ""
@@ -270,6 +299,24 @@ function Restart-Services {
     Stop-Services
     Start-Sleep 3
     Start-Services
+}
+
+function Deploy-Project {
+    Write-ColoredText "🚀 Deploy: build and run deploy.bat" "Cyan"
+    Build-Project
+    $deployBat = Join-Path $ProjectRoot "deploy.bat"
+    if (Test-Path $deployBat) {
+        & $deployBat
+    } else {
+        Write-ColoredText "deploy.bat not found" "Red"
+    }
+}
+
+function Setup-Project {
+    Write-ColoredText "🧰 Running setup (build + db seed)..." "Cyan"
+    Build-Project
+    Db-Command -Action "seed"
+    Write-ColoredText "✅ Setup complete" "Green"
 }
 
 function Check-Health {
@@ -314,6 +361,36 @@ function Check-Health {
         Write-ColoredText "❌ Local backend is not responding" "Red"
     }
     Write-Host ""
+}
+
+function Db-Command {
+    param([string]$Action = "push")
+    Push-Location $BackendDir
+    switch ($Action.ToLower()) {
+        "push" { npm run db:push }
+        "generate" { npm run db:generate }
+        "seed" { npm run db:seed }
+        default { Write-ColoredText "Unknown db action. Use: push | generate | seed" "Yellow" }
+    }
+    Pop-Location
+}
+
+function Dev-Backend {
+    Push-Location $BackendDir
+    Start-Process -FilePath "npm" -ArgumentList "run","dev" -WindowStyle Minimized
+    Pop-Location
+    Write-ColoredText "✅ Backend dev server started" "Green"
+}
+
+function Start-Backend {
+    $log = Join-Path $LogsDir "backend.log"
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c npm start > `"$log`" 2>&1" -WindowStyle Minimized -WorkingDirectory $BackendDir
+    Write-ColoredText "✅ Backend started (logging to $log)" "Green"
+}
+
+function Stop-Backend {
+    Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force
+    Write-ColoredText "✅ Backend stopped" "Green"
 }
 
 function Build-Project {
@@ -371,9 +448,20 @@ switch ($Command.ToLower()) {
     "status" { Show-Status }
     "health" { Check-Health }
     "build" { Build-Project }
+    "db" { Db-Command -Action $Option }
+    "dev" { Dev-Backend }
+    "start-backend" { Start-Backend }
+    "stop-backend" { Stop-Backend }
+    "start-caddy" { Start-Caddy }
+    "stop-caddy" { Stop-Caddy }
+    "restart-caddy" { Restart-Caddy }
+    "start-cloudflared" { Start-Cloudflared }
+    "stop-cloudflared" { Stop-Cloudflared }
+    "restart-cloudflared" { Restart-Cloudflared }
+    "deploy" { Deploy-Project }
+    "setup" { Setup-Project }
     "help" { Show-Menu }
     default { Show-Menu }
 }
 
 Write-Host ""
-Read-Host "Press Enter to continue"
