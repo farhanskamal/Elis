@@ -9,6 +9,7 @@ import NotificationsToaster from './components/NotificationsToaster';
 import ErrorBoundary from './components/ErrorBoundary';
 import { User, Role } from './types';
 import { api } from './services/apiService';
+import KioskDashboard from './pages/kiosk/KioskDashboard';
 
 const AppContent: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -52,6 +53,19 @@ const AppContent: React.FC = () => {
     }
   }, [currentUser, loadUserTheme]);
 
+  // Restore session on refresh if token exists
+  React.useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token && !currentUser) {
+      api.verifyToken().then(({ user }) => {
+        setCurrentUser(user);
+        loadUserTheme(user.themePreferences);
+      }).catch(() => {
+        // ignore; user will have to log in again
+      });
+    }
+  }, [currentUser, loadUserTheme]);
+
   const authContextValue = useMemo(() => ({
     user: currentUser,
     login,
@@ -72,12 +86,15 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Kiosk override: if flag set and user logged in, always show kiosk
+  const kioskMode = typeof window !== 'undefined' && localStorage.getItem('kioskMode') === 'true';
+
   return (
     <ErrorBoundary>
       <AuthContext.Provider value={authContextValue}>
         <NotificationsProvider>
           <div className="min-h-screen text-gray-800" style={{ backgroundColor: 'var(--color-bg)' }}>
-            {currentUser ? renderDashboard() : <LoginPage initialError={error} />}
+            {currentUser ? (kioskMode ? <KioskDashboard /> : renderDashboard()) : <LoginPage initialError={error} />}
             <NotificationsToaster/>
           </div>
         </NotificationsProvider>

@@ -88,7 +88,7 @@ router.delete('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req,
   }
 });
 
-// Log magazine check
+// Log magazine check (uses authenticated user as monitor)
 router.post('/:id/log', authenticateToken, async (req, res) => {
   try {
     const { id: magazineId } = req.params;
@@ -178,6 +178,54 @@ router.delete('/:id/log/:weekIdentifier', authenticateToken, requireRole(['LIBRA
     res.json({ success: true });
   } catch (error) {
     console.error('Remove magazine log error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Log magazine check on behalf of a monitor (librarian only)
+router.post('/:id/log-as', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
+  try {
+    const { id: magazineId } = req.params;
+    const { weekIdentifier, monitorId } = req.body as { weekIdentifier?: string, monitorId?: string };
+
+    if (!weekIdentifier || !monitorId) {
+      return res.status(400).json({ error: 'weekIdentifier and monitorId are required' });
+    }
+
+    const magazine = await prisma.magazine.findUnique({ where: { id: magazineId } });
+    if (!magazine) {
+      return res.status(404).json({ error: 'Magazine not found' });
+    }
+
+    const monitor = await prisma.user.findUnique({ where: { id: monitorId }, select: { id: true, role: true } });
+    if (!monitor || monitor.role !== 'MONITOR') {
+      return res.status(400).json({ error: 'Monitor not found or not a MONITOR' });
+    }
+
+    const existingLog = await prisma.magazineLog.findUnique({
+      where: { magazineId_weekIdentifier: { magazineId, weekIdentifier } }
+    });
+    if (existingLog) {
+      return res.status(400).json({ error: 'Magazine already checked for this week' });
+    }
+
+    const log = await prisma.magazineLog.create({
+      data: {
+        magazineId,
+        weekIdentifier,
+        checkedByMonitorId: monitorId,
+      },
+      include: {
+        magazine: true,
+        checkedByMonitor: {
+          select: { id: true, name: true, profilePicture: true }
+        }
+      }
+    });
+
+    res.status(201).json(log);
+  } catch (error) {
+    console.error('Log magazine check-as error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

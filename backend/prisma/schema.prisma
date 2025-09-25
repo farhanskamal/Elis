@@ -23,6 +23,7 @@ model User {
   auditTargetLogs  AuditLog[]         @relation("AuditTarget")
   magazineLogs     MagazineLog[]
   monitorLogs      MonitorLog[]
+  kioskCheckins    KioskCheckin[]
   shifts           ShiftAssignment[]
   assignedTasks    TaskAssignment[]
   taskStatuses     TaskStatusRecord[]
@@ -200,33 +201,33 @@ model AuditLog {
 }
 
 model EventType {
-  id             String          @id @default(cuid())
-  name           String          @unique
-  color          String
-  icon           String?
-  closesLibrary  Boolean         @default(false)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  events         CalendarEvent[]
+  id            String          @id @default(cuid())
+  name          String          @unique
+  color         String
+  icon          String?
+  closesLibrary Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  events        CalendarEvent[]
 
   @@map("event_types")
 }
 
 model CalendarEvent {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   typeId      String
   type        EventType @relation(fields: [typeId], references: [id])
   startDate   String
   endDate     String
-  allDay      Boolean  @default(false)
+  allDay      Boolean   @default(false)
   periodStart Int?
   periodEnd   Int?
   description String?
   createdById String?
-  createdBy   User?    @relation("CalendarEventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdBy   User?     @relation("CalendarEventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([startDate])
   @@index([endDate])
@@ -248,4 +249,14 @@ enum TaskStatus {
   PENDING
   COMPLETED
   CANNOT_COMPLETE
+}
+
+model KioskCheckin {
+  id        String   @id @default(cuid())
+  monitorId String
+  timestamp DateTime @default(now())
+  monitor   User     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId, timestamp])
+  @@map("kiosk_checkins")
 }

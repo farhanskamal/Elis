@@ -77,13 +77,21 @@ const LibrarianDashboard: React.FC = () => {
                                 <p className="text-gray-600">View monitor profiles and manage their accounts.</p>
                                 <button onClick={() => setActiveView('users')} className="mt-4 text-blue-600 font-semibold">Go to Users &rarr;</button>
                             </Card>
-                            <Card className="hover:shadow-lg transition-shadow">
+<Card className="hover:shadow-lg transition-shadow">
                                 <div className="flex items-center mb-2">
                                     <ClockIcon className="w-6 h-6 text-blue-600 mr-3" />
                                     <h2 className="text-xl font-semibold">Monitor Hours</h2>
                                 </div>
                                 <p className="text-gray-600">Review and generate reports on all monitor hours logged.</p>
                                 <button onClick={() => setActiveView('hours')} className="mt-4 text-blue-600 font-semibold">View Hours &rarr;</button>
+                            </Card>
+                            <Card className="hover:shadow-lg transition-shadow">
+                                <div className="flex items-center mb-2">
+                                    <DisplayIcon className="w-6 h-6 text-blue-600 mr-3" />
+                                    <h2 className="text-xl font-semibold">Launch Kiosk Mode</h2>
+                                </div>
+                                <p className="text-gray-600">Opens a simplified dashboard for monitors on this device. Persists across refresh until you exit.</p>
+                                <button onClick={() => { localStorage.setItem('kioskMode', 'true'); window.location.reload(); }} className="mt-4 text-blue-600 font-semibold">Launch &rarr;</button>
                             </Card>
                         </div>
                     </div>
@@ -136,3 +144,9 @@ const ClockIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export default LibrarianDashboard;
+
+const DisplayIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1zm6 12h4m-6 2h8" />
+    </svg>
+);

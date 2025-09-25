@@ -1,7 +1,7 @@
 :80 {
 	# Enable compression
 	encode gzip zstd
-	
+
 	# Handle API requests - must be first!
 	handle /api/* {
 		# CORS headers
@@ -9,15 +9,31 @@
 		header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
 		header Access-Control-Allow-Headers "Content-Type, Authorization"
 		header Access-Control-Allow-Credentials true
-		
+
 		# Handle OPTIONS requests
 		@options method OPTIONS
 		respond @options "" 200
-		
+
 		# Proxy to backend
 		reverse_proxy localhost:3001
 	}
-	
+
+	# Handle capacity endpoint
+	handle /capacity {
+		# CORS headers
+		header Access-Control-Allow-Origin https://letstestit.me
+		header Access-Control-Allow-Methods "GET, OPTIONS"
+		header Access-Control-Allow-Headers "Content-Type, Authorization"
+		header Access-Control-Allow-Credentials true
+
+		# Handle OPTIONS requests
+		@options method OPTIONS
+		respond @options "" 200
+
+		# Proxy to backend
+		reverse_proxy localhost:3001
+	}
+
 	# Handle everything else - serve frontend
 	handle {
 		root * "C:\Users\Mafius\Documents\Projects\Personal\Elis-dev\dist"

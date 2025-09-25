@@ -302,6 +302,23 @@ class ApiService {
     });
   }
 
+  // --- KIOSK ---
+  async kioskCheckin(monitorId: string): Promise<{ id: string; monitorId: string; timestamp: string }> {
+    return this.request(`/kiosk/checkin`, { method: 'POST', body: JSON.stringify({ monitorId }) });
+  }
+  async getLastKioskCheckin(monitorId: string): Promise<{ id: string; monitorId: string; timestamp: string } | null> {
+    const params = new URLSearchParams({ monitorId }).toString();
+    return this.request(`/kiosk/checkin/last?${params}`);
+  }
+
+  // Librarian log magazine on behalf of a monitor
+  async logMagazineCheckAs(magazineId: string, weekIdentifier: string, monitorId: string): Promise<any> {
+    return this.request<any>(`/magazines/${magazineId}/log-as`, {
+      method: 'POST',
+      body: JSON.stringify({ weekIdentifier, monitorId }),
+    });
+  }
+
   // --- ANNOUNCEMENTS ---
   async getAnnouncements(): Promise<Announcement[]> {
     return this.request<Announcement[]>('/announcements');

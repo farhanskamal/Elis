@@ -23,6 +23,7 @@ import auditRoutes from './routes/audit';
 import notificationRoutes from './routes/notifications';
 import eventTypeRoutes from './routes/eventTypes';
 import eventRoutes from './routes/events';
+import kioskRoutes from './routes/kiosk';
 
 dotenv.config();
 
@@ -175,6 +176,7 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/event-types', eventTypeRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/kiosk', kioskRoutes);
 
 // 404 handler for unknown routes
 app.use('*', notFoundHandler);
