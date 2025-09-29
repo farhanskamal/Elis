@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
 import { api } from '../../services/apiService';
 import { Announcement, PeriodDefinition, Role, Shift, Task, TaskStatus, User } from '../../types';
+import { NotificationsContext } from '../../context/NotificationsContext';
+import { AuthContext } from '../../context/AuthContext';
+import LaptopCheckup from './LaptopCheckup';
 
 // Helper to display FirstName + LastInitial or full
 const displayName = (name: string) => {
@@ -22,7 +25,21 @@ const getWeekIdentifier = (d: Date): string => {
   return `${d.getUTCFullYear()}-W${weekNo}`;
 };
 
+// Compute Monday (week start) for a given date
+const getWeekStartDateString = (date: Date) => {
+  const d = new Date(date);
+  const dow = d.getDay();
+  const diff = d.getDate() - dow + (dow === 0 ? -6 : 1);
+  const monday = new Date(d);
+  monday.setDate(diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString().split('T')[0];
+};
+
 const KioskDashboard: React.FC = () => {
+  const { add: notify } = useContext(NotificationsContext);
+  const { user: currentUser } = useContext(AuthContext);
+
   const [monitors, setMonitors] = useState<User[]>([]);
   const [selectedMonitor, setSelectedMonitor] = useState<User | null>(null);
   const [search, setSearch] = useState('');
@@ -30,41 +47,66 @@ const KioskDashboard: React.FC = () => {
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [periods, setPeriods] = useState<PeriodDefinition[]>([]);
-  const [todayShifts, setTodayShifts] = useState<Shift[]>([]);
+
+  // Header clock and optional weather
+  const [nowText, setNowText] = useState<string>(new Date().toLocaleString());
+  const [weather, setWeather] = useState<null | { tempC: number; description: string }>(null);
+
+  // Schedule as a day view
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [weekShifts, setWeekShifts] = useState<Shift[]>([]);
+
+  // Magazines (monthly weeks view)
   const [magazines, setMagazines] = useState<{ id: string; title: string }[]>([]);
-  const [magWeekChecked, setMagWeekChecked] = useState<Record<string, boolean>>({});
-  const [lastCheckin, setLastCheckin] = useState<string | null>(null);
+  const [magazineLogs, setMagazineLogs] = useState<{ magazineId: string; weekIdentifier: string; checkedByMonitorId: string; timestamp: string }[]>([]);
+  const [magMonthDate, setMagMonthDate] = useState<Date>(new Date());
+
+  // Last logged hours string for monitor (not kiosk checkin code)
+  const [lastLogged, setLastLogged] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
 
-  // Load initial data
+  // Header: live clock and basic weather using Open-Meteo if geolocation is allowed
+  useEffect(() => {
+    const timer = setInterval(() => setNowText(new Date().toLocaleTimeString()), 1_000);
+    setNowText(new Date().toLocaleTimeString());
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
+          const resp = await fetch(url);
+          const data = await resp.json();
+          if (data?.current_weather) {
+            setWeather({ tempC: data.current_weather.temperature, description: 'Now' });
+          }
+        } catch {
+          // ignore weather errors silently
+        }
+      }, () => { /* ignore denied */ });
+    }
+    return () => clearInterval(timer);
+  }, []);
+
+  // Load initial data (monitors, announcement, periods, magazines, schedule for current week)
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const [users, annos, pdefs] = await Promise.all([
+        const [users, annos, pdefs, mags] = await Promise.all([
           api.getAllUsers(),
           api.getAnnouncements(),
           api.getPeriodDefinitions(),
+          api.getMagazines(),
         ]);
         setMonitors(users.filter(u => u.role === Role.Monitor));
         setAnnouncement(annos[0] || null);
         setPeriods(pdefs);
-
-        const today = new Date();
-        const day = new Date();
-        // Compute Monday of current week
-        const dow = day.getDay();
-        const diff = day.getDate() - dow + (dow === 0 ? -6 : 1);
-        const monday = new Date(day);
-        monday.setDate(diff);
-        monday.setHours(0,0,0,0);
-        const weekStart = monday.toISOString().split('T')[0];
-        const shifts = await api.getScheduleForWeek(weekStart);
-        const todayStr = new Date().toISOString().split('T')[0];
-        setTodayShifts(shifts.filter(s => s.date === todayStr));
-
-        const mags = await api.getMagazines();
         setMagazines(mags);
+
+        const weekStart = getWeekStartDateString(new Date());
+        const shifts = await api.getScheduleForWeek(weekStart);
+        setWeekShifts(shifts);
       } finally {
         setLoading(false);
       }
@@ -72,7 +114,20 @@ const KioskDashboard: React.FC = () => {
     load();
   }, []);
 
-  // When monitor selected, load their tasks, magazine checks for current week, and last kiosk check-in
+  // When date changes, ensure shifts for that date's week are loaded
+  useEffect(() => {
+    const ensureWeek = async () => {
+      const weekStart = getWeekStartDateString(new Date(selectedDate));
+      const haveWeek = weekShifts.some(s => s.date >= weekStart && s.date <= new Date(new Date(weekStart).getTime() + 6*86400000).toISOString().split('T')[0]);
+      if (!haveWeek) {
+        const shifts = await api.getScheduleForWeek(weekStart);
+        setWeekShifts(shifts);
+      }
+    };
+    ensureWeek();
+  }, [selectedDate]);
+
+  // When monitor selected, load their tasks, magazine logs for current month, and last hours log
   useEffect(() => {
     const loadForMonitor = async () => {
       if (!selectedMonitor) return;
@@ -81,29 +136,28 @@ const KioskDashboard: React.FC = () => {
       ]);
       setTasks(userTasks);
 
-      // Magazine week checks
+      // Magazine logs (all) so we can compute month view
       const logs = await api.getMagazineLogs();
-      const weekId = getWeekIdentifier(new Date());
-      const map: Record<string, boolean> = {};
-      magazines.forEach(m => { map[m.id] = false; });
-      logs.forEach(l => {
-        if (l.weekIdentifier === weekId) {
-          map[l.magazineId] = true;
-        }
-      });
-      setMagWeekChecked(map);
+      setMagazineLogs(logs);
 
-      // Last kiosk check-in
+      // Last logged hours for this monitor
       try {
-        const last = await api.getLastKioskCheckin(selectedMonitor.id);
-        setLastCheckin(last ? new Date(last.timestamp).toLocaleString() : null);
+        const logs2 = await api.getMonitorLogs(selectedMonitor.id);
+        // Sort by date then period descending to find latest log
+        const last = logs2.sort((a,b) => {
+          const ad = new Date(a.date + 'T00:00:00').valueOf();
+          const bd = new Date(b.date + 'T00:00:00').valueOf();
+          if (bd !== ad) return bd - ad;
+          return (b.period || 0) - (a.period || 0);
+        })[0];
+        setLastLogged(last ? `${last.date} (P${last.period})` : null);
       } catch {
-        setLastCheckin(null);
+        setLastLogged(null);
       }
     };
     loadForMonitor();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMonitor, magazines.length]);
+  }, [selectedMonitor, magMonthDate.getMonth(), magMonthDate.getFullYear()]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -111,15 +165,56 @@ const KioskDashboard: React.FC = () => {
     return monitors.filter(m => m.name.toLowerCase().includes(q));
   }, [search, monitors]);
 
-  const handleCheckin = async () => {
-    if (!selectedMonitor) return;
+  // Day schedule for selectedDate
+  const dayShifts = useMemo(() => weekShifts.filter(s => s.date === selectedDate), [weekShifts, selectedDate]);
+
+  const prevDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+  const nextDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  // Check-in modal state (no code required)
+  const [isCheckinOpen, setIsCheckinOpen] = useState(false);
+  const [checkinDate, setCheckinDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [checkinPeriod, setCheckinPeriod] = useState<number | ''>('');
+  const [isLogging, setIsLogging] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
+
+  const openCheckin = () => {
+    if (periods.length > 0 && checkinPeriod === '') setCheckinPeriod(periods[0].period);
+    setIsCheckinOpen(true);
+  };
+
+  const submitCheckin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMonitor || checkinPeriod === '') return;
     try {
-      await api.kioskCheckin(selectedMonitor.id);
-      const last = await api.getLastKioskCheckin(selectedMonitor.id);
-      setLastCheckin(last ? new Date(last.timestamp).toLocaleString() : null);
-      alert('Checked in!');
+      setIsLogging(true);
+      setLogError(null);
+      await api.logHoursByLibrarian(selectedMonitor.id, checkinDate, Number(checkinPeriod));
+      setIsCheckinOpen(false);
+      notify({ type: 'info', title: 'Hours Logged', message: `Logged for ${checkinDate}, period ${checkinPeriod}` });
+      // refresh last logged
+      try {
+        const logs2 = await api.getMonitorLogs(selectedMonitor.id);
+        const last = logs2.sort((a,b) => {
+          const ad = new Date(a.date + 'T00:00:00').valueOf();
+          const bd = new Date(b.date + 'T00:00:00').valueOf();
+          if (bd !== ad) return bd - ad;
+          return (b.period || 0) - (a.period || 0);
+        })[0];
+        setLastLogged(last ? `${last.date} (P${last.period})` : null);
+      } catch {}
     } catch (e: any) {
-      alert(e.message || 'Failed to check in');
+      setLogError(e.message || 'Failed to log hours');
+    } finally {
+      setIsLogging(false);
     }
   };
 
@@ -129,34 +224,86 @@ const KioskDashboard: React.FC = () => {
       await api.updateTaskStatus(taskId, selectedMonitor.id, status);
       const updated = await api.getTasksForMonitor(selectedMonitor.id);
       setTasks(updated);
+      const label = status === TaskStatus.Completed ? 'Completed' : status === TaskStatus.CannotComplete ? "Can't Complete" : 'Pending';
+      notify({ type: 'info', title: 'Task Updated', message: `Set to ${label}` });
     } catch (e: any) {
-      alert(e.message || 'Failed to update task');
+      notify({ type: 'error', title: 'Task Update Failed', message: e.message || 'Failed to update task' });
     }
   };
 
-  const handleMagazineToggle = async (magazineId: string, checked: boolean) => {
+  // Magazine month view helpers
+  const weeksInMonth = useMemo(() => {
+    const year = magMonthDate.getFullYear();
+    const month = magMonthDate.getMonth();
+    const lastDay = new Date(year, month + 1, 0);
+    const weeks: { display: string; identifier: string }[] = [];
+    let counter = 1;
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      const id = getWeekIdentifier(new Date(year, month, i));
+      if (!weeks.find(w => w.identifier === id)) {
+        weeks.push({ display: `Week ${counter}`, identifier: id });
+        counter++;
+      }
+    }
+    return weeks;
+  }, [magMonthDate]);
+
+  const isMagWeekChecked = (magazineId: string, weekIdentifier: string) =>
+    !!magazineLogs.find(l => l.magazineId === magazineId && l.weekIdentifier === weekIdentifier);
+
+  const toggleMagazineWeek = async (magazineId: string, weekIdentifier: string, checked: boolean) => {
     if (!selectedMonitor) return;
-    const weekId = getWeekIdentifier(new Date());
+    // Kiosk rule: do not allow unchecking once checked
+    if (!checked) return;
     try {
-      if (checked) {
-        await api.logMagazineCheckAs(magazineId, weekId, selectedMonitor.id);
-      } else {
-        // Uncheck requires librarian or same monitor; kiosk runs as librarian, so allowed.
-        await api.removeMagazineLog(magazineId, weekId);
+      try {
+        await api.logMagazineCheckAs(magazineId, weekIdentifier, selectedMonitor.id);
+      } catch (err: any) {
+        // Fallback for servers that don't have /log-as yet
+        if ((err?.message || '').toLowerCase().includes('not found')) {
+          await api.logMagazineCheck(magazineId, weekIdentifier);
+          notify({ type: 'info', title: 'Fallback used', message: 'Logged without attribution to selected monitor (server missing log-as endpoint).' });
+        } else {
+          throw err;
+        }
       }
       const logs = await api.getMagazineLogs();
-      const map: Record<string, boolean> = {};
-      magazines.forEach(m => { map[m.id] = false; });
-      logs.forEach(l => { if (l.weekIdentifier === weekId) map[l.magazineId] = true; });
-      setMagWeekChecked(map);
+      setMagazineLogs(logs);
     } catch (e: any) {
-      alert(e.message || 'Failed to update magazine');
+      notify({ type: 'error', title: 'Magazine Update Failed', message: e.message || 'Failed to update magazine' });
     }
   };
 
-  const exitKiosk = () => {
-    localStorage.removeItem('kioskMode');
-    window.location.reload();
+  const exitKiosk = async () => {
+    // Do not call any API that might 401 and clear token; use current user from context.
+    if (!currentUser?.email) {
+      notify({ type: 'error', title: 'Unable to verify session', message: 'No user in session. Please refresh and try again.' });
+      return;
+    }
+    const pwd = window.prompt('Enter your password to exit kiosk:');
+    if (!pwd) return;
+    // Verify password without altering current session/token
+    const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001/api';
+    try {
+      // Suppress any global auth redirects during password check
+      sessionStorage.setItem('suppressAuthRedirect', 'true');
+      const resp = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: currentUser.email, password: pwd })
+      });
+      if (!resp.ok) {
+        notify({ type: 'error', title: 'Incorrect Password', message: 'Password was incorrect.' });
+        return;
+      }
+      // Success: keep existing session, just exit kiosk
+      localStorage.removeItem('kioskMode');
+      window.location.reload();
+    } catch (e) {
+      notify({ type: 'error', title: 'Verification Failed', message: 'Could not verify password. Check your connection and try again.' });
+    } finally {
+      sessionStorage.removeItem('suppressAuthRedirect');
+    }
   };
 
   if (loading) return <div className="p-6"><Spinner/></div>;
@@ -172,7 +319,16 @@ const KioskDashboard: React.FC = () => {
               <p className="text-sm text-gray-600">Kiosk Mode</p>
             </div>
           </div>
-          <Button onClick={exitKiosk} variant="secondary">Exit Kiosk</Button>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <div className="text-sm font-medium">{new Date(selectedDate).toLocaleDateString()}</div>
+              <div className="text-xs text-gray-600">{nowText}</div>
+            </div>
+            {weather && (
+              <div className="hidden md:block text-sm text-gray-700">{Math.round(weather.tempC)}°C</div>
+            )}
+            <Button onClick={exitKiosk} variant="secondary">Exit Kiosk</Button>
+          </div>
         </div>
 
         {/* Monitor selector */}
@@ -216,20 +372,31 @@ const KioskDashboard: React.FC = () => {
             )}
           </div>
 
-          {/* Check-in */}
+          {/* Laptop Check Up */}
+          <div className="md:col-span-3">
+            <LaptopCheckup />
+          </div>
+
+          {/* Check-in (no code; choose date & period) */}
           <Card>
             <h2 className="text-xl font-semibold mb-3">Check In</h2>
-            <p className="text-sm text-gray-600 mb-2">Select a monitor above, then press to check in (1-hour cooldown).</p>
-            <Button onClick={handleCheckin} disabled={!selectedMonitor}>Check In</Button>
-            <p className="text-xs text-gray-500 mt-2">Last check-in: {lastCheckin || '—'}</p>
+            <p className="text-sm text-gray-600 mb-2">Select a monitor above, then choose a date and period to log hours.</p>
+            <Button onClick={openCheckin} disabled={!selectedMonitor}>Check In</Button>
           </Card>
 
-          {/* Today’s schedule */}
+          {/* Day schedule */}
           <Card>
-            <h2 className="text-xl font-semibold mb-3">Today’s Schedule</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-semibold">Schedule (Day)</h2>
+              <div className="flex items-center space-x-2">
+                <Button variant="secondary" className="px-2 py-1 text-xs" onClick={prevDay}>Prev</Button>
+                <input type="date" className="border rounded px-2 py-1 text-sm" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+                <Button variant="secondary" className="px-2 py-1 text-xs" onClick={nextDay}>Next</Button>
+              </div>
+            </div>
             <ul className="space-y-1 text-sm">
-              {todayShifts.length === 0 && <li className="text-gray-500">No shifts scheduled for today.</li>}
-              {todayShifts.map(s => (
+              {dayShifts.length === 0 && <li className="text-gray-500">No shifts scheduled for this day.</li>}
+              {dayShifts.map(s => (
                 <li key={s.id}>
                   <span className="font-medium">P{s.period}:</span> {s.monitors.map(m => displayName(m.name)).join(', ')}
                 </li>
@@ -244,48 +411,64 @@ const KioskDashboard: React.FC = () => {
             {selectedMonitor && (
               <ul className="space-y-2">
                 {tasks.length === 0 && <li className="text-gray-500 text-sm">No tasks.</li>}
-                {tasks.map(task => {
-                  const myStatus = task.statuses.find(s => s.monitorId === selectedMonitor.id)?.status || TaskStatus.Pending;
-                  return (
-                    <li key={task.id} className="border rounded p-2">
-                      <div className="flex justify-between">
-                        <div>
-                          <div className="font-semibold text-sm">{task.title}</div>
-                          <div className="text-xs text-gray-500">Due {task.dueDate} {task.dueTime || ''}</div>
-                        </div>
-                        <div className="space-x-2">
-                          <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => handleTaskStatus(task.id, TaskStatus.Pending)}>Pending</Button>
-                          <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => handleTaskStatus(task.id, TaskStatus.CannotComplete)}>Can't</Button>
-                          <Button className="px-2 py-1 text-xs" onClick={() => handleTaskStatus(task.id, TaskStatus.Completed)}>Done</Button>
-                        </div>
+                {tasks.map(task => (
+                  <li key={task.id} className="border rounded p-2">
+                    <div className="flex justify-between">
+                      <div>
+                        <div className="font-semibold text-sm">{task.title}</div>
+                        <div className="text-xs text-gray-500">Due {task.dueDate} {task.dueTime || ''}</div>
                       </div>
-                    </li>
-                  );
-                })}
+                      <div className="space-x-2">
+                        <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => handleTaskStatus(task.id, TaskStatus.Pending)}>Pending</Button>
+                        <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => handleTaskStatus(task.id, TaskStatus.CannotComplete)}>Can't</Button>
+                        <Button className="px-2 py-1 text-xs" onClick={() => handleTaskStatus(task.id, TaskStatus.Completed)}>Done</Button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
           </Card>
 
-          {/* Magazine checklist - current week */}
+          {/* Magazine checklist - monthly weeks view */}
           <div className="md:col-span-3">
             <Card>
-              <h2 className="text-xl font-semibold mb-3">Magazine Checklist (This Week)</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xl font-semibold">Magazine Checklist</h2>
+                <div className="flex items-center space-x-2">
+                  <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => setMagMonthDate(new Date(magMonthDate.setMonth(magMonthDate.getMonth() - 1)))}>◀</Button>
+                  <span className="text-sm font-medium w-36 text-center">{magMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                  <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => setMagMonthDate(new Date(magMonthDate.setMonth(magMonthDate.getMonth() + 1)))}>▶</Button>
+                </div>
+              </div>
               {!selectedMonitor && <p className="text-sm text-gray-500">Select a monitor to attribute checks.</p>}
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[800px] text-sm">
                   <thead>
                     <tr className="text-left text-xs text-gray-600">
                       <th className="px-3 py-2">Magazine</th>
-                      <th className="px-3 py-2">Checked</th>
+                      {weeksInMonth.map(w => (
+                        <th key={w.identifier} className="px-3 py-2 text-center">{w.display}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
                     {magazines.map(m => (
                       <tr key={m.id} className="border-t">
                         <td className="px-3 py-2">{m.title}</td>
-                        <td className="px-3 py-2">
-                          <input type="checkbox" disabled={!selectedMonitor} checked={!!magWeekChecked[m.id]} onChange={e => handleMagazineToggle(m.id, e.target.checked)} />
-                        </td>
+                        {weeksInMonth.map(w => {
+                          const checked = isMagWeekChecked(m.id, w.identifier);
+                          return (
+                            <td key={`${m.id}-${w.identifier}`} className="px-3 py-2 text-center">
+                              <input
+                                type="checkbox"
+                                disabled={!selectedMonitor || checked}
+                                checked={checked}
+                                onChange={e => e.target.checked && toggleMagazineWeek(m.id, w.identifier, true)}
+                              />
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>
@@ -295,6 +478,35 @@ const KioskDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Check-in Modal */}
+      {isCheckinOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+          <Card className="w-full max-w-sm">
+            <h2 className="text-xl font-bold mb-4">Log Hours</h2>
+            <form onSubmit={submitCheckin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Date</label>
+                <input type="date" className="mt-1 w-full p-2 border rounded-md" value={checkinDate} onChange={e => setCheckinDate(e.target.value)} required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Period</label>
+                <select className="mt-1 w-full p-2 border rounded-md" value={checkinPeriod} onChange={e => setCheckinPeriod(Number(e.target.value))} required>
+                  <option value="" disabled>Select</option>
+                  {periods.map(p => (
+                    <option key={p.period} value={p.period}>Period {p.period}</option>
+                  ))}
+                </select>
+              </div>
+              {logError && <p className="text-sm text-red-600">{logError}</p>}
+              <div className="flex justify-end space-x-2 pt-2">
+                <Button type="button" variant="secondary" onClick={() => setIsCheckinOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={isLogging}>{isLogging ? 'Logging...' : 'Submit'}</Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

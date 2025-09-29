@@ -56,7 +56,8 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
   try {
     const { date, period, monitorIds } = req.body;
 
-    if (!date || !period || !Array.isArray(monitorIds)) {
+    // Validate inputs (allow period=0)
+    if (!date || typeof period !== 'number' || !Array.isArray(monitorIds)) {
       return res.status(400).json({ error: 'Date, period, and monitorIds are required' });
     }
 

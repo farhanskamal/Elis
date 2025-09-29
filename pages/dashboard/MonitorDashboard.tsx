@@ -10,6 +10,7 @@ import Button from '../../components/ui/Button';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../services/apiService';
 import { Announcement, Task, TaskStatus, PeriodDefinition } from '../../types';
+import LaptopCheckupPage from '../features/LaptopCheckupPage';
 
 const MonitorDashboard: React.FC = () => {
     const [activeView, setActiveView] = useState('dashboard');
@@ -127,6 +128,13 @@ const MonitorDashboard: React.FC = () => {
                     <button onClick={() => setActiveView('my-tasks')} className="mt-4 text-blue-600 font-semibold">Go to Tasks &rarr;</button>
                 </Card>
             </div>
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <h2 className="text-xl font-semibold mb-2">Laptop Check Up</h2>
+                <p className="text-gray-600 text-sm mb-2">View laptop availability. To check in/out, use Kiosk Mode.</p>
+                <Button onClick={() => setActiveView('laptops')} className="w-full">Open</Button>
+              </Card>
+            </div>
         </div>
     );
 
@@ -142,6 +150,8 @@ const MonitorDashboard: React.FC = () => {
                 return <Announcements />;
             case 'my-tasks':
                 return <MonitorTasks />;
+            case 'laptops':
+                return <LaptopCheckupPage />;
             case 'dashboard':
             default:
                 return renderDashboardContent();

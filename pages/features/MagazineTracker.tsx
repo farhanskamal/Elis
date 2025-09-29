@@ -190,7 +190,42 @@ const MagazineTracker: React.FC = () => {
             <div className="flex justify-between items-center mb-6">
                  <h1 className="text-3xl font-bold text-gray-800">Magazine Tracker</h1>
                  <div className="flex items-center space-x-4">
-                    <Button onClick={exportToCsv} variant="secondary">Export to CSV</Button>
+                    <Button onClick={exportToCsv} variant="secondary">Export CSV</Button>
+                    {user?.role === Role.Librarian && (
+                      <>
+                        <Button onClick={async () => {
+                          try {
+                            const data = await api.exportMagazines();
+                            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'magazines.json';
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          } catch (e) {
+                            console.error('Export JSON failed', e);
+                          }
+                        }} variant="secondary">Export JSON</Button>
+                        <label className="inline-flex items-center">
+                          <input type="file" accept="application/json" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            try {
+                              const text = await file.text();
+                              const parsed = JSON.parse(text);
+                              await api.importMagazines(parsed);
+                              fetchData();
+                            } catch (err) {
+                              console.error('Import JSON failed', err);
+                            } finally {
+                              e.currentTarget.value = '';
+                            }
+                          }} />
+                          <Button variant="secondary" onClick={(ev) => (ev.currentTarget.previousSibling as HTMLInputElement).click()}>Import JSON</Button>
+                        </label>
+                      </>
+                    )}
                     <div className="flex items-center space-x-2">
                         <Button onClick={() => changeMonth(-1)} variant="secondary">&larr;</Button>
                         <span className="text-lg font-medium text-gray-700 w-32 text-center">

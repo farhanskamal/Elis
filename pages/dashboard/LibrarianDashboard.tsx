@@ -9,6 +9,7 @@ import Announcements from '../features/Announcements';
 import TaskAssignment from '../features/TaskAssignment';
 import CheckinCodes from '../features/CheckinCodes';
 import AuditLog from '../features/AuditLog';
+import LaptopCheckupPage from '../features/LaptopCheckupPage';
 
 const LibrarianDashboard: React.FC = () => {
     const [activeView, setActiveView] = useState('dashboard');
@@ -31,6 +32,8 @@ const LibrarianDashboard: React.FC = () => {
                 return <CheckinCodes />;
             case 'audit':
                 return <AuditLog />;
+            case 'laptops':
+                return <LaptopCheckupPage />;
             case 'dashboard':
             default:
                 return (
@@ -84,6 +87,14 @@ const LibrarianDashboard: React.FC = () => {
                                 </div>
                                 <p className="text-gray-600">Review and generate reports on all monitor hours logged.</p>
                                 <button onClick={() => setActiveView('hours')} className="mt-4 text-blue-600 font-semibold">View Hours &rarr;</button>
+                            </Card>
+                            <Card className="hover:shadow-lg transition-shadow">
+                                <div className="flex items-center mb-2">
+                                    <LaptopIcon className="w-6 h-6 text-blue-600 mr-3" />
+                                    <h2 className="text-xl font-semibold">Laptop Check Up</h2>
+                                </div>
+                                <p className="text-gray-600">Manage laptop availability, import/export, and view status.</p>
+                                <button onClick={() => setActiveView('laptops')} className="mt-4 text-blue-600 font-semibold">Open &rarr;</button>
                             </Card>
                             <Card className="hover:shadow-lg transition-shadow">
                                 <div className="flex items-center mb-2">
@@ -148,5 +159,10 @@ export default LibrarianDashboard;
 const DisplayIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1zm6 12h4m-6 2h8" />
+    </svg>
+);
+const LaptopIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm-1 13h20M9 9h6" />
     </svg>
 );

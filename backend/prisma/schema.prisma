@@ -8,26 +8,29 @@ datasource db {
 }
 
 model User {
-  id               String             @id @default(cuid())
-  name             String
-  email            String             @unique
-  password         String
-  role             Role
-  profilePicture   String?
-  backgroundColor  String?
-  themePreferences Json?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  announcements    Announcement[]
-  auditActorLogs   AuditLog[]         @relation("AuditActor")
-  auditTargetLogs  AuditLog[]         @relation("AuditTarget")
-  magazineLogs     MagazineLog[]
-  monitorLogs      MonitorLog[]
-  kioskCheckins    KioskCheckin[]
-  shifts           ShiftAssignment[]
-  assignedTasks    TaskAssignment[]
-  taskStatuses     TaskStatusRecord[]
-  eventsCreated    CalendarEvent[]    @relation("CalendarEventCreatedBy")
+  id                      String             @id @default(cuid())
+  name                    String
+  email                   String             @unique
+  password                String
+  role                    Role
+  profilePicture          String?
+  backgroundColor         String?
+  themePreferences        Json?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  announcements           Announcement[]
+  auditActorLogs          AuditLog[]         @relation("AuditActor")
+  auditTargetLogs         AuditLog[]         @relation("AuditTarget")
+  magazineLogs            MagazineLog[]
+  monitorLogs             MonitorLog[]
+  kioskCheckins           KioskCheckin[]
+  shifts                  ShiftAssignment[]
+  assignedTasks           TaskAssignment[]
+  taskStatuses            TaskStatusRecord[]
+  eventsCreated           CalendarEvent[]    @relation("CalendarEventCreatedBy")
+  // Back-relations for laptop checkouts
+  laptopCheckoutsMade     LaptopCheckout[]   @relation("LaptopCheckedOutBy")
+  laptopCheckinsProcessed LaptopCheckout[]   @relation("LaptopCheckedInBy")
 
   @@index([role])
   @@index([email])
@@ -259,4 +262,35 @@ model KioskCheckin {
 
   @@index([monitorId, timestamp])
   @@map("kiosk_checkins")
+}
+
+// --- Laptop Inventory & Checkouts ---
+model Laptop {
+  id           String           @id @default(cuid())
+  number       Int              @unique
+  isAccessible Boolean          @default(true)
+  note         String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  checkouts    LaptopCheckout[]
+
+  @@map("laptops")
+}
+
+model LaptopCheckout {
+  id             String    @id @default(cuid())
+  laptopId       String
+  borrowerName   String
+  ossis          String?
+  checkedOutAt   DateTime  @default(now())
+  checkedInAt    DateTime?
+  checkedOutById String?
+  checkedInById  String?
+
+  laptop       Laptop @relation(fields: [laptopId], references: [id], onDelete: Cascade)
+  checkedOutBy User?  @relation("LaptopCheckedOutBy", fields: [checkedOutById], references: [id], onDelete: SetNull)
+  checkedInBy  User?  @relation("LaptopCheckedInBy", fields: [checkedInById], references: [id], onDelete: SetNull)
+
+  @@index([laptopId, checkedInAt])
+  @@map("laptop_checkouts")
 }

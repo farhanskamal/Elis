@@ -1,4 +1,4 @@
-import { User, Role, Shift, Magazine, MonitorLog, Announcement, Task, TaskPriority, MagazineLog, TaskStatus, MonitorTaskStatus, PeriodDefinition, EventType, CalendarEvent } from '../types';
+import { User, Role, Shift, Magazine, MonitorLog, Announcement, Task, TaskPriority, MagazineLog, TaskStatus, MonitorTaskStatus, PeriodDefinition, EventType, CalendarEvent, Laptop, LaptopCheckout } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -34,10 +34,15 @@ class ApiService {
         return this.request<T>(endpoint, options, retries - 1);
       }
 
-      // Handle unauthorized - clear token and redirect to login
+      // Handle unauthorized - clear token and redirect to login (unless suppressed)
       if (response.status === 401) {
-        localStorage.removeItem('authToken');
-        window.location.href = '/';
+        try {
+          const suppress = sessionStorage.getItem('suppressAuthRedirect') === 'true';
+          if (!suppress) {
+            localStorage.removeItem('authToken');
+            window.location.href = '/';
+          }
+        } catch {}
         throw new Error('Your session has expired. Please log in again.');
       }
 
@@ -259,6 +264,17 @@ class ApiService {
     });
   }
 
+  async exportMagazines(): Promise<{ magazines: Array<{ title: string }>; logs: Array<{ magazineId: string; weekIdentifier: string; checkedByMonitorId: string; timestamp: string }> }> {
+    return this.request(`/magazines/export/json`);
+  }
+
+  async importMagazines(payload: { magazines?: Array<{ title: string }>; logs?: Array<{ magazineId?: string; magazineTitle?: string; weekIdentifier: string; checkedByMonitorId: string; timestamp?: string }> }): Promise<{ success: boolean }> {
+    return this.request(`/magazines/import/json`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   // --- HOURS & CHECK-IN ---
   async getCheckinCode(): Promise<{ code: string }> {
     return this.request<{ code: string }>('/checkin/code');
@@ -427,6 +443,52 @@ class ApiService {
   }
   async deleteEvent(id: string): Promise<{ success: boolean }> {
     return this.request<{ success: boolean }>(`/events/${id}`, { method: 'DELETE' });
+  }
+
+  // --- LAPTOPS ---
+  async getLaptops(): Promise<Laptop[]> {
+    return this.request<Laptop[]>('/laptops');
+  }
+  async createLaptop(number: number, note?: string): Promise<Laptop> {
+    return this.request<Laptop>('/laptops', {
+      method: 'POST',
+      body: JSON.stringify({ number, note }),
+    });
+  }
+  async bulkCreateLaptops(count: number): Promise<{ success: boolean; created: number; laptops: Laptop[] }> {
+    return this.request<{ success: boolean; created: number; laptops: Laptop[] }>('/laptops/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ count }),
+    });
+  }
+  async updateLaptop(id: string, data: Partial<Pick<Laptop, 'number' | 'isAccessible' | 'note'>>): Promise<Laptop> {
+    return this.request<Laptop>(`/laptops/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+  async checkoutLaptop(id: string, borrowerName: string, ossis?: string): Promise<LaptopCheckout> {
+    return this.request<LaptopCheckout>(`/laptops/${id}/checkout`, {
+      method: 'POST',
+      body: JSON.stringify({ borrowerName, ossis }),
+    });
+  }
+  async checkinLaptop(id: string): Promise<LaptopCheckout> {
+    return this.request<LaptopCheckout>(`/laptops/${id}/checkin`, {
+      method: 'POST',
+    });
+  }
+  async deleteLaptop(id: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/laptops/${id}`, { method: 'DELETE' });
+  }
+  async exportLaptops(): Promise<{ laptops: Array<{ number: number; isAccessible: boolean; note?: string }> }> {
+    return this.request<{ laptops: Array<{ number: number; isAccessible: boolean; note?: string }> }>(`/laptops/export/json`);
+  }
+  async importLaptops(laptops: Array<{ number: number; isAccessible?: boolean; note?: string }>): Promise<{ success: boolean; laptops: Laptop[] }> {
+    return this.request<{ success: boolean; laptops: Laptop[] }>(`/laptops/import/json`, {
+      method: 'POST',
+      body: JSON.stringify({ laptops })
+    });
   }
 }
 

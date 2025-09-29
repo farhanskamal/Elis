@@ -114,3 +114,25 @@ export interface CalendarEvent {
   periodEnd?: number;
   description?: string;
 }
+
+// --- Laptops ---
+export interface LaptopCheckout {
+  id: string;
+  laptopId: string;
+  borrowerName: string;
+  ossis?: string;
+  checkedOutAt: string;
+  checkedInAt?: string | null;
+  checkedOutBy?: { id: string; name: string };
+  checkedInBy?: { id: string; name: string };
+}
+
+export interface Laptop {
+  id: string;
+  number: number;
+  isAccessible: boolean;
+  note?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  currentCheckout?: LaptopCheckout | null;
+}
