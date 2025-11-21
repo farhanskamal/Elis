@@ -4,9 +4,7 @@ import { User, Role, Shift, Magazine, MonitorLog, Announcement, Task, TaskPriori
 
 // Passwords would be in a real database. Stored in plaintext for demo purposes ONLY.
 export let mockUsers: User[] = [
-  { id: 'user-1', name: 'Dr. Anya Sharma', email: 'admin@school.edu', password: 'password123', role: Role.Librarian, profilePicture: 'https://picsum.photos/seed/librarian/100/100', backgroundColor: '#f3f4f6' },
-  { id: 'user-2', name: 'Ben Carter', email: 'ben@student.school.edu', password: 'password123', role: Role.Monitor, profilePicture: 'https://picsum.photos/seed/ben/100/100', backgroundColor: '#f3f4f6' },
-  { id: 'user-3', name: 'Chloe Davis', email: 'chloe@student.school.edu', password: 'password123', role: Role.Monitor, profilePicture: 'https://picsum.photos/seed/chloe/100/100', backgroundColor: '#f3f4f6' },
+    { id: 'user-1', name: 'Edison Admin', email: 'admin@school.edu', password: '3di$onL', role: Role.Librarian, profilePicture: 'https://pbs.twimg.com/profile_images/1436328729282764801/-bKoMQfK_400x400.jpg', backgroundColor: '#f3f4f6' },
 ];
 
 let mockShifts: Shift[] = [
@@ -37,26 +35,26 @@ let mockAnnouncements: Announcement[] = [
 ];
 
 let mockTasks: Task[] = [
-    { 
-        id: 'task-1', 
-        title: 'Organize Biography Section', 
-        description: 'Please organize the biography section (920-929) alphabetically by subject last name.', 
-        priority: TaskPriority.Medium, 
-        dueDate: '2024-08-15', 
-        assignedTo: ['user-2', 'user-3'], 
+    {
+        id: 'task-1',
+        title: 'Organize Biography Section',
+        description: 'Please organize the biography section (920-929) alphabetically by subject last name.',
+        priority: TaskPriority.Medium,
+        dueDate: '2024-08-15',
+        assignedTo: ['user-2', 'user-3'],
         statuses: [
             { monitorId: 'user-2', status: TaskStatus.Pending },
             { monitorId: 'user-3', status: TaskStatus.Pending }
         ],
-        createdAt: new Date().toISOString() 
+        createdAt: new Date().toISOString()
     },
-    { 
-        id: 'task-2', 
-        title: 'Prepare New Book Cart', 
-        description: 'Get the cart of new books ready for shelving. This includes stamping and adding security tags.', 
-        priority: TaskPriority.High, 
-        dueDate: '2024-08-01', 
-        assignedTo: ['user-2'], 
+    {
+        id: 'task-2',
+        title: 'Prepare New Book Cart',
+        description: 'Get the cart of new books ready for shelving. This includes stamping and adding security tags.',
+        priority: TaskPriority.High,
+        dueDate: '2024-08-01',
+        assignedTo: ['user-2'],
         statuses: [
             { monitorId: 'user-2', status: TaskStatus.Completed, completedAt: new Date().toISOString() }
         ],
@@ -114,9 +112,9 @@ export const api = {
         const userIndex = mockUsers.findIndex(u => u.id === userId);
         if (userIndex > -1) {
             if (preferences.profilePicture) {
-                 mockUsers[userIndex].profilePicture = preferences.profilePicture;
+                mockUsers[userIndex].profilePicture = preferences.profilePicture;
             }
-            if(preferences.backgroundColor) {
+            if (preferences.backgroundColor) {
                 mockUsers[userIndex].backgroundColor = preferences.backgroundColor;
             }
             return simulateNetworkDelay(sanitizeUser(mockUsers[userIndex]));
@@ -211,7 +209,7 @@ export const api = {
         }
         const monitor = mockUsers.find(u => u.id === monitorId);
         if (!monitor) {
-             return Promise.reject("Monitor not found.");
+            return Promise.reject("Monitor not found.");
         }
 
         const scheduledShift = mockShifts.find(s => s.date === date && s.period === period && s.monitorIds.includes(monitorId));
@@ -258,7 +256,7 @@ export const api = {
     },
 
     // --- ANNOUNCEMENTS ---
-    getAnnouncements: () => simulateNetworkDelay(mockAnnouncements.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
+    getAnnouncements: () => simulateNetworkDelay(mockAnnouncements.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
     createAnnouncement: (title: string, content: string, imageUrl: string | undefined, author: User) => {
         const newAnno: Announcement = {
             id: `anno-${Date.now()}`,
@@ -271,8 +269,8 @@ export const api = {
         return simulateNetworkDelay(newAnno);
     },
     updateAnnouncement: (annoId: string, title: string, content: string, imageUrl: string | undefined) => {
-         const annoIndex = mockAnnouncements.findIndex(a => a.id === annoId);
-         if(annoIndex > -1) {
+        const annoIndex = mockAnnouncements.findIndex(a => a.id === annoId);
+        if (annoIndex > -1) {
             mockAnnouncements[annoIndex] = {
                 ...mockAnnouncements[annoIndex],
                 title,
@@ -281,8 +279,8 @@ export const api = {
                 updatedAt: new Date().toISOString(),
             };
             return simulateNetworkDelay(mockAnnouncements[annoIndex]);
-         }
-         return Promise.reject("Announcement not found");
+        }
+        return Promise.reject("Announcement not found");
     },
     deleteAnnouncement: (annoId: string) => {
         mockAnnouncements = mockAnnouncements.filter(a => a.id !== annoId);
@@ -290,7 +288,7 @@ export const api = {
     },
 
     // --- TASKS ---
-    getTasks: () => simulateNetworkDelay(mockTasks.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
+    getTasks: () => simulateNetworkDelay(mockTasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
     getTasksForMonitor: (monitorId: string) => {
         const tasks = mockTasks.filter(t => t.assignedTo.includes(monitorId));
         return simulateNetworkDelay(tasks);
@@ -335,7 +333,7 @@ export const api = {
             const statusIndex = mockTasks[taskIndex].statuses.findIndex(s => s.monitorId === monitorId);
             if (statusIndex > -1) {
                 mockTasks[taskIndex].statuses[statusIndex].status = status;
-                if(status === TaskStatus.Completed) {
+                if (status === TaskStatus.Completed) {
                     mockTasks[taskIndex].statuses[statusIndex].completedAt = new Date().toISOString();
                 } else {
                     delete mockTasks[taskIndex].statuses[statusIndex].completedAt;
