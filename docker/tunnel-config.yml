@@ -1,0 +1,5 @@
+tunnel: library-monitor
+ingress:
+  - hostname: letstestit.me
+    service: http://frontend:80
+  - service: http_status:404

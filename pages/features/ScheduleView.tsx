@@ -15,7 +15,7 @@ const ScheduleView: React.FC = () => {
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
     const [assignedMonitors, setAssignedMonitors] = useState<Set<string>>(new Set());
-    
+
     // State for period definitions modal
     const [isDefinitionModalOpen, setIsDefinitionModalOpen] = useState(false);
     const [periodDefinitions, setPeriodDefinitions] = useState<PeriodDefinition[]>([]);
@@ -30,7 +30,7 @@ const ScheduleView: React.FC = () => {
     const [monthAnchor, setMonthAnchor] = useState(() => {
         const d = new Date();
         d.setDate(1);
-        d.setHours(0,0,0,0);
+        d.setHours(0, 0, 0, 0);
         return d;
     });
     const [monthEvents, setMonthEvents] = useState<CalendarEvent[]>([]);
@@ -39,7 +39,7 @@ const ScheduleView: React.FC = () => {
     const [showNonClosing, setShowNonClosing] = useState(true);
     const [showOverlays, setShowOverlays] = useState(true);
     const [mobileMergePartials, setMobileMergePartials] = useState(true);
-    
+
     // Bulk copy modal state
     const [isBulkCopyModalOpen, setIsBulkCopyModalOpen] = useState(false);
     const [bulkCopy, setBulkCopy] = useState<{ targetWeekStart: string; weeksCount: number }>({ targetWeekStart: '', weeksCount: 1 });
@@ -71,7 +71,7 @@ const ScheduleView: React.FC = () => {
         const diff = today.getDate() - day + (day === 0 ? -6 : 1);
         const monday = new Date(today);
         monday.setDate(diff);
-        monday.setHours(0,0,0,0);
+        monday.setHours(0, 0, 0, 0);
         return monday;
     });
 
@@ -296,7 +296,7 @@ const ScheduleView: React.FC = () => {
         setAssignedMonitors(new Set(shiftToEdit.monitorIds));
         setIsAssignModalOpen(true);
     };
-    
+
     const handleUpdateShift = async () => {
         if (!selectedShift) return;
         const monitorIds: string[] = Array.from(assignedMonitors);
@@ -304,10 +304,10 @@ const ScheduleView: React.FC = () => {
         try {
             if (selectedShift.id.startsWith('new-')) {
                 if (monitorIds.length > 0) {
-                     await api.createShift(selectedShift.date, selectedShift.period, monitorIds);
+                    await api.createShift(selectedShift.date, selectedShift.period, monitorIds);
                 }
             } else {
-                 await api.updateShift(selectedShift.id, monitorIds);
+                await api.updateShift(selectedShift.id, monitorIds);
             }
 
             setIsAssignModalOpen(false);
@@ -345,19 +345,19 @@ const ScheduleView: React.FC = () => {
             alert('Failed to save period definitions. Please try again.');
         }
     };
-    
+
     const handleOpenDefinitionModal = () => {
         setEditedPeriodDefinitions(JSON.parse(JSON.stringify(periodDefinitions)));
         setIsDefinitionModalOpen(true);
     };
-    
+
     const addPeriod = () => {
         const newPeriodNum = editedPeriodDefinitions.length > 0 ? Math.max(...editedPeriodDefinitions.map(p => p.period)) + 1 : 1;
         setEditedPeriodDefinitions([...editedPeriodDefinitions, { period: newPeriodNum, duration: 50, startTime: '00:00', endTime: '00:00' }]);
     };
-    
+
     const removeLastPeriod = () => {
-        if(editedPeriodDefinitions.length > 1) {
+        if (editedPeriodDefinitions.length > 1) {
             setEditedPeriodDefinitions(editedPeriodDefinitions.slice(0, -1));
         }
     };
@@ -404,15 +404,15 @@ const ScheduleView: React.FC = () => {
     const mergedRangesByDate = useMemo(() => {
         const map = new Map<string, { start: number; end: number; events: CalendarEvent[] }[]>();
         for (const date of weekDates) {
-                            const list = (weekClosureMaps.partial.get(date) || []).slice().sort((a,b) => (a.periodStart||0) - (b.periodStart||0));
-            const ranges: { start:number; end:number; events: CalendarEvent[] }[] = [];
+            const list = (weekClosureMaps.partial.get(date) || []).slice().sort((a, b) => (a.periodStart || 0) - (b.periodStart || 0));
+            const ranges: { start: number; end: number; events: CalendarEvent[] }[] = [];
             for (const ev of list as any[]) {
                 const s = ev.periodStart || 0;
                 const e = ev.periodEnd ?? s;
                 if (ranges.length === 0) {
                     ranges.push({ start: s, end: e, events: [ev] });
                 } else {
-                    const last = ranges[ranges.length-1];
+                    const last = ranges[ranges.length - 1];
                     // merge if overlapping or adjacent
                     if (s <= last.end + 1) {
                         last.end = Math.max(last.end, e);
@@ -476,11 +476,11 @@ const ScheduleView: React.FC = () => {
             try {
                 const events = await api.getEventsInRange(start, endStr);
                 setWeekEvents(events);
-            } catch {}
+            } catch { }
             try {
                 const monthEv = await api.getEventsForMonth(monthParam(monthAnchor));
                 setMonthEvents(monthEv);
-            } catch {}
+            } catch { }
         } catch (e) {
             console.error('Failed to create closure', e);
             alert('Failed to create closure.');
@@ -515,126 +515,126 @@ const ScheduleView: React.FC = () => {
             <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
                 <h1 className="text-3xl font-bold text-gray-800 dark:text-slate-100">{viewMode === 'week' ? 'Weekly Schedule' : 'Monthly Calendar'}</h1>
                 <div className="flex items-center space-x-2 flex-wrap gap-2">
-{user?.role === Role.Librarian && (
+                    {user?.role === Role.Librarian && (
                         <>
                             <Button onClick={() => { const defaultType = eventTypes.find(t => t.closesLibrary) || eventTypes.find(t => t.name.toLowerCase() === 'closure') || eventTypes[0]; setClosureForm({ title: '', date: weekDates[0] || new Date().toISOString().split('T')[0], endDate: weekDates[0] || new Date().toISOString().split('T')[0], allDay: true, typeId: defaultType?.id, periodStart: undefined, periodEnd: undefined, description: '' }); setClosureMode('create'); setIsClosureModalOpen(true); }} variant="primary">Add Closure</Button>
                             <Button onClick={() => { setEditableTypes(JSON.parse(JSON.stringify(eventTypes))); setIsTypeModalOpen(true); }} variant="secondary">Manage Tags</Button>
                             <Button onClick={handleOpenDefinitionModal} variant="secondary">Manage Periods</Button>
                             <details className="group inline-block relative">
-                              <summary className="list-none"><Button variant="secondary">Import/Export</Button></summary>
-                              <div className="absolute mt-2 right-0 z-10 bg-white dark:bg-slate-800 dark:text-slate-100 border border-gray-200 dark:border-slate-700 rounded shadow p-3 space-y-3 w-72">
-                                <div className="text-xs font-semibold">Shifts</div>
-                                <div className="flex gap-2">
-                                  <Button variant="secondary" className="text-xs" onClick={async ()=>{ try{ const data = await api.exportShifts(); const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' }); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='shifts.json'; a.click(); URL.revokeObjectURL(url);} catch { try{ const fallback={ shifts: (shifts||[]).map(s=>({ date:s.date, period:s.period, monitorIds:s.monitorIds||[] }))}; const blob=new Blob([JSON.stringify(fallback,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='shifts.json'; a.click(); URL.revokeObjectURL(url);} catch { alert('Export JSON failed'); } } }}>Export JSON</Button>
-                                  <label className="inline-flex items-center">
-                                    <input type="file" accept="application/json" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const p=JSON.parse(t); await api.importShifts(p.shifts||[]); fetchShifts(); }catch{ alert('Import JSON failed'); } finally { e.currentTarget.value=''; } }} />
-                                    <Button variant="secondary" className="text-xs" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
-                                  </label>
+                                <summary className="list-none"><Button variant="secondary">Import/Export</Button></summary>
+                                <div className="absolute mt-2 right-0 z-10 bg-white dark:bg-slate-800 dark:text-slate-100 border border-gray-200 dark:border-slate-700 rounded shadow p-3 space-y-3 w-72">
+                                    <div className="text-xs font-semibold">Shifts</div>
+                                    <div className="flex gap-2">
+                                        <Button variant="secondary" className="text-xs" onClick={async () => { try { const data = await api.exportShifts(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'shifts.json'; a.click(); URL.revokeObjectURL(url); } catch { try { const fallback = { shifts: (shifts || []).map(s => ({ date: s.date, period: s.period, monitorIds: s.monitorIds || [] })) }; const blob = new Blob([JSON.stringify(fallback, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'shifts.json'; a.click(); URL.revokeObjectURL(url); } catch { alert('Export JSON failed'); } } }}>Export JSON</Button>
+                                        <label className="inline-flex items-center">
+                                            <input type="file" accept="application/json" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const p = JSON.parse(t); await api.importShifts(p.shifts || []); fetchShifts(); } catch { alert('Import JSON failed'); } finally { e.currentTarget.value = ''; } }} />
+                                            <Button variant="secondary" className="text-xs" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
+                                        </label>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="secondary" className="text-xs" onClick={async () => { try { const data = await api.exportShifts(); const rows = data.shifts.map(s => ({ date: s.date, period: s.period, monitorIds: s.monitorIds.join(';') })); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('shifts.csv', rows, ['date', 'period', 'monitorIds']); } catch { try { const rows = (shifts || []).map((s: any) => ({ date: s.date, period: s.period, monitorIds: (s.monitorIds || []).join(';') })); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('shifts.csv', rows, ['date', 'period', 'monitorIds']); } catch { alert('Export CSV failed'); } } }}>Export CSV</Button>
+                                        <label className="inline-flex items-center">
+                                            <input type="file" accept="text/csv" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows = parseCsv(t); const shifts = rows.map(r => ({ date: r.date, period: Number(r.period), monitorIds: (r.monitorIds || '').split(/[;,\s]+/).filter(Boolean) })); await api.importShifts(shifts); fetchShifts(); } catch { alert('Import CSV failed'); } finally { e.currentTarget.value = ''; } }} />
+                                            <Button variant="secondary" className="text-xs" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
+                                        </label>
+                                    </div>
+                                    <div className="text-xs font-semibold pt-1">Periods</div>
+                                    <div className="flex gap-2">
+                                        <Button variant="secondary" className="text-xs" onClick={async () => { try { const data = await api.exportPeriods(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'periods.json'; a.click(); URL.revokeObjectURL(url); } catch { try { const fallback = { definitions: (periodDefinitions || []).map(p => ({ period: p.period, duration: p.duration, startTime: p.startTime, endTime: p.endTime })) }; const blob = new Blob([JSON.stringify(fallback, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'periods.json'; a.click(); URL.revokeObjectURL(url); } catch { alert('Export periods JSON failed'); } } }}>Export JSON</Button>
+                                        <label className="inline-flex items-center">
+                                            <input type="file" accept="application/json" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const p = JSON.parse(t); await api.importPeriods(p.definitions || []); alert('Imported periods'); } catch { alert('Import periods JSON failed'); } finally { e.currentTarget.value = ''; } }} />
+                                            <Button variant="secondary" className="text-xs" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
+                                        </label>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="secondary" className="text-xs" onClick={async () => { try { const d = await api.exportPeriods(); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('periods.csv', d.definitions, ['period', 'duration', 'startTime', 'endTime']); } catch { try { const { downloadCsv } = await import('../../utils/csv'); downloadCsv('periods.csv', (periodDefinitions || []).map(p => ({ period: p.period, duration: p.duration, startTime: p.startTime, endTime: p.endTime })), ['period', 'duration', 'startTime', 'endTime']); } catch { alert('Export periods CSV failed'); } } }}>Export CSV</Button>
+                                        <label className="inline-flex items-center">
+                                            <input type="file" accept="text/csv" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows = parseCsv(t); const defs = rows.map(r => ({ period: Number(r.period), duration: Number(r.duration), startTime: r.startTime, endTime: r.endTime })); await api.importPeriods(defs); alert('Imported periods'); } catch { alert('Import periods CSV failed'); } finally { e.currentTarget.value = ''; } }} />
+                                            <Button variant="secondary" className="text-xs" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
+                                        </label>
+                                    </div>
+                                    <div className="text-xs font-semibold pt-1">Event Types</div>
+                                    <div className="flex gap-2">
+                                        <Button variant="secondary" className="text-xs" onClick={async () => { try { const d = await api.exportEventTypes(); const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'event_types.json'; a.click(); URL.revokeObjectURL(url); } catch { try { const fallback = { types: (eventTypes || []).map(t => ({ name: t.name, color: t.color, icon: t.icon, closesLibrary: (t as any).closesLibrary })) }; const blob = new Blob([JSON.stringify(fallback, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'event_types.json'; a.click(); URL.revokeObjectURL(url); } catch { alert('Export event types JSON failed'); } } }}>Export JSON</Button>
+                                        <label className="inline-flex items-center">
+                                            <input type="file" accept="application/json" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const p = JSON.parse(t); await api.importEventTypes(p.types || []); alert('Imported event types'); } catch { alert('Import event types JSON failed'); } finally { e.currentTarget.value = ''; } }} />
+                                            <Button variant="secondary" className="text-xs" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
+                                        </label>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="secondary" className="text-xs" onClick={async () => { try { const d = await api.exportEventTypes(); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('event_types.csv', d.types, ['name', 'color', 'icon', 'closesLibrary']); } catch { try { const { downloadCsv } = await import('../../utils/csv'); downloadCsv('event_types.csv', (eventTypes || []).map(t => ({ name: t.name, color: t.color, icon: t.icon || '', closesLibrary: (t as any).closesLibrary ? 'true' : 'false' })), ['name', 'color', 'icon', 'closesLibrary']); } catch { alert('Export event types CSV failed'); } } }}>Export CSV</Button>
+                                        <label className="inline-flex items-center">
+                                            <input type="file" accept="text/csv" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows = parseCsv(t); const types = rows.map(r => ({ name: r.name, color: r.color, icon: r.icon || undefined, closesLibrary: String(r.closesLibrary || '').toLowerCase() === 'true' })); await api.importEventTypes(types); alert('Imported event types'); } catch { alert('Import event types CSV failed'); } finally { e.currentTarget.value = ''; } }} />
+                                            <Button variant="secondary" className="text-xs" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
+                                        </label>
+                                    </div>
                                 </div>
-                                <div className="flex gap-2">
-                                  <Button variant="secondary" className="text-xs" onClick={async ()=>{ try{ const data=await api.exportShifts(); const rows = data.shifts.map(s=>({ date:s.date, period:s.period, monitorIds:s.monitorIds.join(';') })); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('shifts.csv', rows, ['date','period','monitorIds']); }catch{ try{ const rows = (shifts||[]).map((s:any)=>({ date:s.date, period:s.period, monitorIds:(s.monitorIds||[]).join(';') })); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('shifts.csv', rows, ['date','period','monitorIds']); }catch{ alert('Export CSV failed'); } } }}>Export CSV</Button>
-                                  <label className="inline-flex items-center">
-                                    <input type="file" accept="text/csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows=parseCsv(t); const shifts = rows.map(r=>({ date:r.date, period: Number(r.period), monitorIds: (r.monitorIds||'').split(/[;,\s]+/).filter(Boolean) })); await api.importShifts(shifts); fetchShifts(); }catch{ alert('Import CSV failed'); } finally { e.currentTarget.value=''; } }} />
-                                    <Button variant="secondary" className="text-xs" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
-                                  </label>
-                                </div>
-                                <div className="text-xs font-semibold pt-1">Periods</div>
-                                <div className="flex gap-2">
-                                  <Button variant="secondary" className="text-xs" onClick={async ()=>{ try{ const data=await api.exportPeriods(); const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='periods.json'; a.click(); URL.revokeObjectURL(url);}catch{ try{ const fallback={ definitions: (periodDefinitions||[]).map(p=>({ period:p.period, duration:p.duration, startTime:p.startTime, endTime:p.endTime }))}; const blob=new Blob([JSON.stringify(fallback,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='periods.json'; a.click(); URL.revokeObjectURL(url);} catch{ alert('Export periods JSON failed'); } } }}>Export JSON</Button>
-                                  <label className="inline-flex items-center">
-                                    <input type="file" accept="application/json" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const p=JSON.parse(t); await api.importPeriods(p.definitions||[]); alert('Imported periods'); }catch{ alert('Import periods JSON failed'); } finally{ e.currentTarget.value=''; } }} />
-                                    <Button variant="secondary" className="text-xs" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
-                                  </label>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button variant="secondary" className="text-xs" onClick={async ()=>{ try{ const d=await api.exportPeriods(); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('periods.csv', d.definitions, ['period','duration','startTime','endTime']); }catch{ try{ const { downloadCsv } = await import('../../utils/csv'); downloadCsv('periods.csv', (periodDefinitions||[]).map(p=>({ period:p.period, duration:p.duration, startTime:p.startTime, endTime:p.endTime })), ['period','duration','startTime','endTime']); }catch{ alert('Export periods CSV failed'); } } }}>Export CSV</Button>
-                                  <label className="inline-flex items-center">
-                                    <input type="file" accept="text/csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows=parseCsv(t); const defs = rows.map(r=>({ period: Number(r.period), duration: Number(r.duration), startTime: r.startTime, endTime: r.endTime })); await api.importPeriods(defs); alert('Imported periods'); }catch{ alert('Import periods CSV failed'); } finally{ e.currentTarget.value=''; } }} />
-                                    <Button variant="secondary" className="text-xs" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
-                                  </label>
-                                </div>
-                                <div className="text-xs font-semibold pt-1">Event Types</div>
-                                <div className="flex gap-2">
-                                  <Button variant="secondary" className="text-xs" onClick={async ()=>{ try{ const d=await api.exportEventTypes(); const blob=new Blob([JSON.stringify(d,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='event_types.json'; a.click(); URL.revokeObjectURL(url);}catch{ try{ const fallback={ types: (eventTypes||[]).map(t=>({ name:t.name, color:t.color, icon:t.icon, closesLibrary:(t as any).closesLibrary }))}; const blob=new Blob([JSON.stringify(fallback,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='event_types.json'; a.click(); URL.revokeObjectURL(url);}catch{ alert('Export event types JSON failed'); } } }}>Export JSON</Button>
-                                  <label className="inline-flex items-center">
-                                    <input type="file" accept="application/json" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const p=JSON.parse(t); await api.importEventTypes(p.types||[]); alert('Imported event types'); }catch{ alert('Import event types JSON failed'); } finally{ e.currentTarget.value=''; } }} />
-                                    <Button variant="secondary" className="text-xs" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
-                                  </label>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button variant="secondary" className="text-xs" onClick={async ()=>{ try{ const d=await api.exportEventTypes(); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('event_types.csv', d.types, ['name','color','icon','closesLibrary']); }catch{ try{ const { downloadCsv } = await import('../../utils/csv'); downloadCsv('event_types.csv', (eventTypes||[]).map(t=>({ name:t.name, color:t.color, icon:t.icon||'', closesLibrary:(t as any).closesLibrary? 'true':'false' })), ['name','color','icon','closesLibrary']); }catch{ alert('Export event types CSV failed'); } } }}>Export CSV</Button>
-                                  <label className="inline-flex items-center">
-                                    <input type="file" accept="text/csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows=parseCsv(t); const types = rows.map(r=>({ name:r.name, color:r.color, icon:r.icon||undefined, closesLibrary: String(r.closesLibrary||'').toLowerCase()==='true' })); await api.importEventTypes(types); alert('Imported event types'); }catch{ alert('Import event types CSV failed'); } finally{ e.currentTarget.value=''; } }} />
-                                    <Button variant="secondary" className="text-xs" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
-                                  </label>
-                              </div>
-                              </div>
                             </details>
-                            <Button variant="secondary" onClick={async () => { try { const data = await api.exportShifts(); const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' }); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='shifts.json'; a.click(); URL.revokeObjectURL(url);} catch { try{ const fallback={ shifts: (shifts||[]).map(s=>({ date:s.date, period:s.period, monitorIds:s.monitorIds||[] }))}; const blob=new Blob([JSON.stringify(fallback,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='shifts.json'; a.click(); URL.revokeObjectURL(url);} catch { alert('Export failed'); } } }}>Export JSON</Button>
+                            <Button variant="secondary" onClick={async () => { try { const data = await api.exportShifts(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'shifts.json'; a.click(); URL.revokeObjectURL(url); } catch { try { const fallback = { shifts: (shifts || []).map(s => ({ date: s.date, period: s.period, monitorIds: s.monitorIds || [] })) }; const blob = new Blob([JSON.stringify(fallback, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'shifts.json'; a.click(); URL.revokeObjectURL(url); } catch { alert('Export failed'); } } }}>Export JSON</Button>
                             <label className="inline-flex items-center">
-                                <input type="file" accept="application/json" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const p=JSON.parse(t); await api.importShifts(p.shifts||[]); fetchShifts(); }catch{ alert('Import failed'); } finally { e.currentTarget.value=''; } }} />
-                                <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
+                                <input type="file" accept="application/json" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const p = JSON.parse(t); await api.importShifts(p.shifts || []); fetchShifts(); } catch { alert('Import failed'); } finally { e.currentTarget.value = ''; } }} />
+                                <Button variant="secondary" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
                             </label>
-                            <Button variant="secondary" onClick={async ()=>{ try{ const data=await api.exportShifts(); const rows = data.shifts.map(s=>({ date:s.date, period:s.period, monitorIds:s.monitorIds.join(';') })); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('shifts.csv', rows, ['date','period','monitorIds']); }catch{ try{ const rows = (shifts||[]).map((s:any)=>({ date:s.date, period:s.period, monitorIds:(s.monitorIds||[]).join(';') })); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('shifts.csv', rows, ['date','period','monitorIds']); }catch{ alert('Export CSV failed'); } } }}>Export CSV</Button>
+                            <Button variant="secondary" onClick={async () => { try { const data = await api.exportShifts(); const rows = data.shifts.map(s => ({ date: s.date, period: s.period, monitorIds: s.monitorIds.join(';') })); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('shifts.csv', rows, ['date', 'period', 'monitorIds']); } catch { try { const rows = (shifts || []).map((s: any) => ({ date: s.date, period: s.period, monitorIds: (s.monitorIds || []).join(';') })); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('shifts.csv', rows, ['date', 'period', 'monitorIds']); } catch { alert('Export CSV failed'); } } }}>Export CSV</Button>
                             <label className="inline-flex items-center">
-                                <input type="file" accept="text/csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows=parseCsv(t); const shifts = rows.map(r=>({ date:r.date, period: Number(r.period), monitorIds: (r.monitorIds||'').split(/[;,\s]+/).filter(Boolean) })); await api.importShifts(shifts); fetchShifts(); }catch{ alert('Import CSV failed'); } finally { e.currentTarget.value=''; } }} />
-                                <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
+                                <input type="file" accept="text/csv" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows = parseCsv(t); const shifts = rows.map(r => ({ date: r.date, period: Number(r.period), monitorIds: (r.monitorIds || '').split(/[;,\s]+/).filter(Boolean) })); await api.importShifts(shifts); fetchShifts(); } catch { alert('Import CSV failed'); } finally { e.currentTarget.value = ''; } }} />
+                                <Button variant="secondary" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
                             </label>
                             {/* Periods import/export */}
-                            <Button variant="secondary" onClick={async ()=>{ try{ const data=await api.exportPeriods(); const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='periods.json'; a.click(); URL.revokeObjectURL(url);}catch{ try{ const fallback={ definitions: (periodDefinitions||[]).map(p=>({ period:p.period, duration:p.duration, startTime:p.startTime, endTime:p.endTime }))}; const blob=new Blob([JSON.stringify(fallback,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='periods.json'; a.click(); URL.revokeObjectURL(url);} catch{ alert('Export periods failed'); } } }}>Export Periods JSON</Button>
+                            <Button variant="secondary" onClick={async () => { try { const data = await api.exportPeriods(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'periods.json'; a.click(); URL.revokeObjectURL(url); } catch { try { const fallback = { definitions: (periodDefinitions || []).map(p => ({ period: p.period, duration: p.duration, startTime: p.startTime, endTime: p.endTime })) }; const blob = new Blob([JSON.stringify(fallback, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'periods.json'; a.click(); URL.revokeObjectURL(url); } catch { alert('Export periods failed'); } } }}>Export Periods JSON</Button>
                             <label className="inline-flex items-center">
-                                <input type="file" accept="application/json" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const p=JSON.parse(t); await api.importPeriods(p.definitions||[]); alert('Imported periods'); }catch{ alert('Import periods failed'); } finally{ e.currentTarget.value=''; } }} />
-                                <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import Periods JSON</Button>
+                                <input type="file" accept="application/json" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const p = JSON.parse(t); await api.importPeriods(p.definitions || []); alert('Imported periods'); } catch { alert('Import periods failed'); } finally { e.currentTarget.value = ''; } }} />
+                                <Button variant="secondary" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import Periods JSON</Button>
                             </label>
-                            <Button variant="secondary" onClick={async ()=>{ try{ const d=await api.exportPeriods(); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('periods.csv', d.definitions, ['period','duration','startTime','endTime']); }catch{ try{ const { downloadCsv } = await import('../../utils/csv'); downloadCsv('periods.csv', (periodDefinitions||[]).map(p=>({ period:p.period, duration:p.duration, startTime:p.startTime, endTime:p.endTime })), ['period','duration','startTime','endTime']); }catch{ alert('Export periods CSV failed'); } } }}>Export Periods CSV</Button>
+                            <Button variant="secondary" onClick={async () => { try { const d = await api.exportPeriods(); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('periods.csv', d.definitions, ['period', 'duration', 'startTime', 'endTime']); } catch { try { const { downloadCsv } = await import('../../utils/csv'); downloadCsv('periods.csv', (periodDefinitions || []).map(p => ({ period: p.period, duration: p.duration, startTime: p.startTime, endTime: p.endTime })), ['period', 'duration', 'startTime', 'endTime']); } catch { alert('Export periods CSV failed'); } } }}>Export Periods CSV</Button>
                             <label className="inline-flex items-center">
-                                <input type="file" accept="text/csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows=parseCsv(t); const defs = rows.map(r=>({ period: Number(r.period), duration: Number(r.duration), startTime: r.startTime, endTime: r.endTime })); await api.importPeriods(defs); alert('Imported periods'); }catch{ alert('Import periods CSV failed'); } finally{ e.currentTarget.value=''; } }} />
-                                <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import Periods CSV</Button>
+                                <input type="file" accept="text/csv" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows = parseCsv(t); const defs = rows.map(r => ({ period: Number(r.period), duration: Number(r.duration), startTime: r.startTime, endTime: r.endTime })); await api.importPeriods(defs); alert('Imported periods'); } catch { alert('Import periods CSV failed'); } finally { e.currentTarget.value = ''; } }} />
+                                <Button variant="secondary" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import Periods CSV</Button>
                             </label>
                             {/* Event Types import/export */}
-                            <Button variant="secondary" onClick={async ()=>{ try{ const d=await api.exportEventTypes(); const blob=new Blob([JSON.stringify(d,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='event_types.json'; a.click(); URL.revokeObjectURL(url);}catch{ try{ const fallback={ types: (eventTypes||[]).map(t=>({ name:t.name, color:t.color, icon:t.icon, closesLibrary:(t as any).closesLibrary }))}; const blob=new Blob([JSON.stringify(fallback,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='event_types.json'; a.click(); URL.revokeObjectURL(url);}catch{ alert('Export event types failed'); } } }}>Export Event Types JSON</Button>
+                            <Button variant="secondary" onClick={async () => { try { const d = await api.exportEventTypes(); const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'event_types.json'; a.click(); URL.revokeObjectURL(url); } catch { try { const fallback = { types: (eventTypes || []).map(t => ({ name: t.name, color: t.color, icon: t.icon, closesLibrary: (t as any).closesLibrary })) }; const blob = new Blob([JSON.stringify(fallback, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'event_types.json'; a.click(); URL.revokeObjectURL(url); } catch { alert('Export event types failed'); } } }}>Export Event Types JSON</Button>
                             <label className="inline-flex items-center">
-                                <input type="file" accept="application/json" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const p=JSON.parse(t); await api.importEventTypes(p.types||[]); alert('Imported event types'); }catch{ alert('Import event types failed'); } finally{ e.currentTarget.value=''; } }} />
-                                <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import Event Types JSON</Button>
+                                <input type="file" accept="application/json" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const p = JSON.parse(t); await api.importEventTypes(p.types || []); alert('Imported event types'); } catch { alert('Import event types failed'); } finally { e.currentTarget.value = ''; } }} />
+                                <Button variant="secondary" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import Event Types JSON</Button>
                             </label>
-                            <Button variant="secondary" onClick={async ()=>{ try{ const d=await api.exportEventTypes(); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('event_types.csv', d.types, ['name','color','icon','closesLibrary']); }catch{ try{ const { downloadCsv } = await import('../../utils/csv'); downloadCsv('event_types.csv', (eventTypes||[]).map(t=>({ name:t.name, color:t.color, icon:t.icon||'', closesLibrary:(t as any).closesLibrary? 'true':'false' })), ['name','color','icon','closesLibrary']); }catch{ alert('Export event types CSV failed'); } } }}>Export Event Types CSV</Button>
+                            <Button variant="secondary" onClick={async () => { try { const d = await api.exportEventTypes(); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('event_types.csv', d.types, ['name', 'color', 'icon', 'closesLibrary']); } catch { try { const { downloadCsv } = await import('../../utils/csv'); downloadCsv('event_types.csv', (eventTypes || []).map(t => ({ name: t.name, color: t.color, icon: t.icon || '', closesLibrary: (t as any).closesLibrary ? 'true' : 'false' })), ['name', 'color', 'icon', 'closesLibrary']); } catch { alert('Export event types CSV failed'); } } }}>Export Event Types CSV</Button>
                             <label className="inline-flex items-center">
-                                <input type="file" accept="text/csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows=parseCsv(t); const types = rows.map(r=>({ name:r.name, color:r.color, icon:r.icon||undefined, closesLibrary: String(r.closesLibrary||'').toLowerCase()==='true' })); await api.importEventTypes(types); alert('Imported event types'); }catch{ alert('Import event types CSV failed'); } finally{ e.currentTarget.value=''; } }} />
-                                <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import Event Types CSV</Button>
+                                <input type="file" accept="text/csv" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const t = await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows = parseCsv(t); const types = rows.map(r => ({ name: r.name, color: r.color, icon: r.icon || undefined, closesLibrary: String(r.closesLibrary || '').toLowerCase() === 'true' })); await api.importEventTypes(types); alert('Imported event types'); } catch { alert('Import event types CSV failed'); } finally { e.currentTarget.value = ''; } }} />
+                                <Button variant="secondary" onClick={(ev) => ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import Event Types CSV</Button>
                             </label>
                             {viewMode === 'week' && (
                                 <>
-                                <Button variant="secondary" onClick={async () => {
-                                    if (!confirm('Copy this week\'s closures to next week?')) return;
-                                    try {
-                                        const copied = [] as any[];
-                                        for (const ev of weekEvents) {
-                                            if (!isClosure(ev)) continue;
-                                            // copy only if overlaps current week
-                                            for (const date of weekDates) {
-                                                if (date >= ev.startDate && date <= ev.endDate) { copied.push(ev); break; }
+                                    <Button variant="secondary" onClick={async () => {
+                                        if (!confirm('Copy this week\'s closures to next week?')) return;
+                                        try {
+                                            const copied = [] as any[];
+                                            for (const ev of weekEvents) {
+                                                if (!isClosure(ev)) continue;
+                                                // copy only if overlaps current week
+                                                for (const date of weekDates) {
+                                                    if (date >= ev.startDate && date <= ev.endDate) { copied.push(ev); break; }
+                                                }
                                             }
+                                            for (const ev of copied) {
+                                                const start = new Date(ev.startDate); start.setDate(start.getDate() + 7);
+                                                const end = new Date(ev.endDate); end.setDate(end.getDate() + 7);
+                                                await api.createEvent({
+                                                    title: ev.title,
+                                                    typeId: ev.typeId,
+                                                    startDate: start.toISOString().split('T')[0],
+                                                    endDate: end.toISOString().split('T')[0],
+                                                    allDay: ev.allDay,
+                                                    periodStart: ev.periodStart,
+                                                    periodEnd: ev.periodEnd,
+                                                    description: ev.description
+                                                } as any);
+                                            }
+                                            alert(`Copied ${copied.length} closure(s) to next week.`);
+                                        } catch (e) {
+                                            alert('Failed to copy closures.');
                                         }
-                                        for (const ev of copied) {
-                                            const start = new Date(ev.startDate); start.setDate(start.getDate()+7);
-                                            const end = new Date(ev.endDate); end.setDate(end.getDate()+7);
-                                            await api.createEvent({
-                                                title: ev.title,
-                                                typeId: ev.typeId,
-                                                startDate: start.toISOString().split('T')[0],
-                                                endDate: end.toISOString().split('T')[0],
-                                                allDay: ev.allDay,
-                                                periodStart: ev.periodStart,
-                                                periodEnd: ev.periodEnd,
-                                                description: ev.description
-                                            } as any);
-                                        }
-                                        alert(`Copied ${copied.length} closure(s) to next week.`);
-                                    } catch (e) {
-                                        alert('Failed to copy closures.');
-                                    }
-                                }}>Copy week ▶ next week</Button>
-                                <Button variant="secondary" onClick={() => { setBulkCopy({ targetWeekStart: weekDates[0], weeksCount: 1 }); setIsBulkCopyModalOpen(true); }}>Bulk copy…</Button>
+                                    }}>Copy week ▶ next week</Button>
+                                    <Button variant="secondary" onClick={() => { setBulkCopy({ targetWeekStart: weekDates[0], weeksCount: 1 }); setIsBulkCopyModalOpen(true); }}>Bulk copy…</Button>
                                 </>
                             )}
                         </>
@@ -649,11 +649,11 @@ const ScheduleView: React.FC = () => {
                         </>
                     ) : (
                         <>
-                            <Button onClick={() => { const d = new Date(monthAnchor); d.setMonth(d.getMonth()-1); setMonthAnchor(d); }} variant="secondary">&larr; Previous</Button>
+                            <Button onClick={() => { const d = new Date(monthAnchor); d.setMonth(d.getMonth() - 1); setMonthAnchor(d); }} variant="secondary">&larr; Previous</Button>
                             <span className="text-sm font-medium text-gray-700 hidden md:block">
                                 {monthAnchor.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone })}
                             </span>
-                            <Button onClick={() => { const d = new Date(monthAnchor); d.setMonth(d.getMonth()+1); setMonthAnchor(d); }} variant="secondary">Next &rarr;</Button>
+                            <Button onClick={() => { const d = new Date(monthAnchor); d.setMonth(d.getMonth() + 1); setMonthAnchor(d); }} variant="secondary">Next &rarr;</Button>
                         </>
                     )}
                     <Button onClick={() => setViewMode(viewMode === 'week' ? 'month' : 'week')} variant="secondary">
@@ -666,7 +666,7 @@ const ScheduleView: React.FC = () => {
                     )}
                 </div>
             </div>
-            
+
             {loading ? (
                 <div className="flex justify-center items-center h-64"><Spinner /></div>
             ) : viewMode === 'week' ? (
@@ -741,8 +741,8 @@ const ScheduleView: React.FC = () => {
                                 }
                                 // Build merged display items (ranges + open periods)
                                 const covered = new Set<number>();
-                                for (const r of ranges) { for (let p=r.start; p<=r.end; p++) covered.add(p); }
-                                type Item = { key:string; order:number; node: React.ReactNode };
+                                for (const r of ranges) { for (let p = r.start; p <= r.end; p++) covered.add(p); }
+                                type Item = { key: string; order: number; node: React.ReactNode };
                                 const items: Item[] = [];
                                 for (const r of ranges) {
                                     const primary = r.events[0];
@@ -778,7 +778,7 @@ const ScheduleView: React.FC = () => {
                                         )
                                     });
                                 }
-                                items.sort((a,b) => a.order - b.order);
+                                items.sort((a, b) => a.order - b.order);
                                 return items.map(x => x.node);
                             })()}
                         </div>
@@ -786,45 +786,71 @@ const ScheduleView: React.FC = () => {
                     {/* Desktop/tablet table view */}
                     <div className="hidden md:block overflow-x-auto bg-white rounded-lg shadow transition-all duration-200 ease-out">
                         <table className="w-full text-sm text-left text-gray-500">
-                        <thead className="text-xs text-gray-700 dark:text-slate-200 uppercase bg-gray-50 dark:bg-slate-700">
-                            <tr>
-                                <th scope="col" className="px-6 py-3">Period</th>
-                                {weekDates.map((date) => {
-                                    const d = new Date(date + 'T00:00:00');
-                                    const weekday = d.toLocaleDateString('en-US', { weekday: 'long', timeZone });
-                                    const mm = d.getMonth() + 1;
-                                    const dd = d.getDate();
-                                    const yyyy = d.getFullYear();
-                                    const closures = weekClosureMaps.fullDay.get(date) || [];
-                                    const underline = closures.length > 0 ? { borderBottom: `2px solid ${closures[0]?.type?.color || '#ef4444'}` } : {};
-                                    return (
-                                        <th key={date} scope="col" className="px-6 py-3" style={underline}>{`${weekday} - ${mm}/${dd}/${yyyy}`}</th>
-                                    );
-                                })}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {/* Closed banner row removed per request; closures are rendered within period cells */}
-                            {periodDefinitions.map(({ period }) => (
-                                <tr key={period} className="border-b">
-                                    <th scope="row" className="px-6 py-4 font-medium text-gray-900 bg-gray-50">
-                                        {labelFor(weekDates[0], period)}
-                                    </th>
-                                    {weekDates.map(date => {
-                                        const shift = getShiftFor(date, period) as any;
-                                        const isCurrentUserShift = shift?.monitorIds.includes(user?.id || '');
-                                        const canModify = user?.role === Role.Librarian;
-                                        const dayClosures = weekClosureMaps.fullDay.get(date) || [];
-                                        const ranges = mergedRangesByDate.get(date) || [];
+                            <thead className="text-xs text-gray-700 dark:text-slate-200 uppercase bg-gray-50 dark:bg-slate-700">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">Period</th>
+                                    {weekDates.map((date) => {
+                                        const d = new Date(date + 'T00:00:00');
+                                        const weekday = d.toLocaleDateString('en-US', { weekday: 'long', timeZone });
+                                        const mm = d.getMonth() + 1;
+                                        const dd = d.getDate();
+                                        const yyyy = d.getFullYear();
+                                        const closures = weekClosureMaps.fullDay.get(date) || [];
+                                        const underline = closures.length > 0 ? { borderBottom: `2px solid ${closures[0]?.type?.color || '#ef4444'}` } : {};
+                                        return (
+                                            <th key={date} scope="col" className="px-6 py-3" style={underline}>{`${weekday} - ${mm}/${dd}/${yyyy}`}</th>
+                                        );
+                                    })}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {/* Closed banner row removed per request; closures are rendered within period cells */}
+                                {periodDefinitions.map(({ period }) => (
+                                    <tr key={period} className="border-b">
+                                        <th scope="row" className="px-6 py-4 font-medium text-gray-900 bg-gray-50">
+                                            {labelFor(weekDates[0], period)}
+                                        </th>
+                                        {weekDates.map(date => {
+                                            const shift = getShiftFor(date, period) as any;
+                                            const isCurrentUserShift = shift?.monitorIds.includes(user?.id || '');
+                                            const canModify = user?.role === Role.Librarian;
+                                            const dayClosures = weekClosureMaps.fullDay.get(date) || [];
+                                            const ranges = mergedRangesByDate.get(date) || [];
 
-                                        // If full day closure: render single block only at first period row, skip others
-                                        if (showOverlays && dayClosures.length > 0) {
-                                            const firstPeriod = Math.min(...periodDefinitions.map(p => p.period));
-                                            if (period === firstPeriod) {
-                                                const primary = dayClosures[0];
+                                            // If full day closure: render single block only at first period row, skip others
+                                            if (showOverlays && dayClosures.length > 0) {
+                                                const firstPeriod = Math.min(...periodDefinitions.map(p => p.period));
+                                                if (period === firstPeriod) {
+                                                    const primary = dayClosures[0];
+                                                    return (
+                                                        <td key={`${date}-${period}`}
+                                                            rowSpan={periodDefinitions.length}
+                                                            onClick={() => canModify && handleCellClick(date, period)}
+                                                            className={`px-4 py-3 border-l relative ${canModify ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                                                            style={{ backgroundColor: hexToRgba(primary?.type?.color || '#ef4444', 0.15) }}>
+                                                            <div className="flex items-center gap-2 flex-wrap text-xs">
+                                                                <span>{iconFor(primary?.type?.icon)}</span>
+                                                                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: primary?.type?.color || '#ef4444' }}></span>
+                                                                <span className="font-semibold text-gray-700 truncate" title={primary?.title}>{primary?.title}</span>
+                                                                {dayClosures.length > 1 && <span className="text-[10px] text-gray-500">+{dayClosures.length - 1} more</span>}
+                                                                <span className="ml-auto text-[10px] text-gray-500">Full day</span>
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                }
+                                                // skip cell for other period rows
+                                                return null;
+                                            }
+
+                                            // Check if current period is start of a merged partial range
+                                            const range = ranges.find(r => r.start === period);
+                                            const withinRange = ranges.some(r => period >= r.start && period <= r.end);
+                                            if (showOverlays && range) {
+                                                const primary = range.events[0];
+                                                const rowSpan = range.end - range.start + 1;
                                                 return (
                                                     <td key={`${date}-${period}`}
-                                                        rowSpan={periodDefinitions.length}
+                                                        rowSpan={rowSpan}
                                                         onClick={() => canModify && handleCellClick(date, period)}
                                                         className={`px-4 py-3 border-l relative ${canModify ? 'cursor-pointer hover:bg-gray-50' : ''}`}
                                                         style={{ backgroundColor: hexToRgba(primary?.type?.color || '#ef4444', 0.15) }}>
@@ -832,58 +858,32 @@ const ScheduleView: React.FC = () => {
                                                             <span>{iconFor(primary?.type?.icon)}</span>
                                                             <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: primary?.type?.color || '#ef4444' }}></span>
                                                             <span className="font-semibold text-gray-700 truncate" title={primary?.title}>{primary?.title}</span>
-                                                            {dayClosures.length > 1 && <span className="text-[10px] text-gray-500">+{dayClosures.length - 1} more</span>}
-                                                            <span className="ml-auto text-[10px] text-gray-500">Full day</span>
+                                                            {range.events.length > 1 && <span className="text-[10px] text-gray-500">+{range.events.length - 1} more</span>}
+                                                            <span className="ml-auto text-[10px] text-gray-500">Periods {range.start}–{range.end}</span>
                                                         </div>
                                                     </td>
                                                 );
                                             }
-                                            // skip cell for other period rows
-                                            return null;
-                                        }
+                                            // If within a range but not at the start, skip rendering (covered by rowSpan)
+                                            if (showOverlays && withinRange) {
+                                                return null;
+                                            }
 
-                                        // Check if current period is start of a merged partial range
-                                        const range = ranges.find(r => r.start === period);
-                                        const withinRange = ranges.some(r => period >= r.start && period <= r.end);
-                                        if (showOverlays && range) {
-                                            const primary = range.events[0];
-                                            const rowSpan = range.end - range.start + 1;
+                                            // Normal open cell
+                                            const monitorDisplay = shift ? getMonitorNamesFromShift(shift.monitorIds, shift) : <span className="text-gray-300">-</span>;
                                             return (
                                                 <td key={`${date}-${period}`}
-                                                    rowSpan={rowSpan}
                                                     onClick={() => canModify && handleCellClick(date, period)}
-                                                    className={`px-4 py-3 border-l relative ${canModify ? 'cursor-pointer hover:bg-gray-50' : ''}`}
-                                                    style={{ backgroundColor: hexToRgba(primary?.type?.color || '#ef4444', 0.15) }}>
-                                                    <div className="flex items-center gap-2 flex-wrap text-xs">
-                                                        <span>{iconFor(primary?.type?.icon)}</span>
-                                                        <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: primary?.type?.color || '#ef4444' }}></span>
-                                                        <span className="font-semibold text-gray-700 truncate" title={primary?.title}>{primary?.title}</span>
-                                                        {range.events.length > 1 && <span className="text-[10px] text-gray-500">+{range.events.length - 1} more</span>}
-                                                        <span className="ml-auto text-[10px] text-gray-500">Periods {range.start}–{range.end}</span>
-                                                    </div>
+                                                    className={`px-4 py-3 border-l relative ${canModify ? 'cursor-pointer hover:bg-gray-50' : ''} ${isCurrentUserShift ? 'bg-sky-100 font-semibold text-sky-800' : ''}`}>
+                                                    <div className="text-xs">{monitorDisplay}</div>
                                                 </td>
                                             );
-                                        }
-                                        // If within a range but not at the start, skip rendering (covered by rowSpan)
-                                        if (showOverlays && withinRange) {
-                                            return null;
-                                        }
-
-                                        // Normal open cell
-                                        const monitorDisplay = shift ? getMonitorNamesFromShift(shift.monitorIds, shift) : <span className="text-gray-300">-</span>;
-                                        return (
-                                            <td key={`${date}-${period}`}
-                                                onClick={() => canModify && handleCellClick(date, period)}
-                                                className={`px-4 py-3 border-l relative ${canModify ? 'cursor-pointer hover:bg-gray-50' : ''} ${isCurrentUserShift ? 'bg-sky-100 font-semibold text-sky-800' : ''}`}>
-                                                <div className="text-xs">{monitorDisplay}</div>
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                        })}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                     {/* Filters */}
                     <div className="mt-2 flex items-center gap-4 text-xs text-gray-600">
                         <label className="flex items-center gap-1">
@@ -895,21 +895,21 @@ const ScheduleView: React.FC = () => {
                     </div>
                     {/* Tag legend */}
                     <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-600">
-                    {eventTypes.map(t => (
-                        <div key={t.id} className="flex items-center gap-1">
-                            <span className="text-[11px]">{iconFor(t.icon)}</span>
-                            <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: t.color }}></span>
-                            <span>{t.name}{t.closesLibrary ? ' (closes)' : ''}</span>
-                        </div>
-                    ))}
-                </div>
+                        {eventTypes.map(t => (
+                            <div key={t.id} className="flex items-center gap-1">
+                                <span className="text-[11px]">{iconFor(t.icon)}</span>
+                                <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: t.color }}></span>
+                                <span>{t.name}{t.closesLibrary ? ' (closes)' : ''}</span>
+                            </div>
+                        ))}
+                    </div>
                 </>
             ) : (
                 // Month view
                 <div className="bg-white rounded-lg shadow p-3 transition-all duration-200 ease-out">
                     {/* Weekday headers */}
                     <div className="grid grid-cols-7 text-xs text-gray-500 mb-2">
-                        {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
                             <div key={d} className="text-center font-medium">{d}</div>
                         ))}
                     </div>
@@ -920,7 +920,7 @@ const ScheduleView: React.FC = () => {
                         const gridStart = new Date(first);
                         gridStart.setDate(first.getDate() - first.getDay()); // start on Sunday
                         const days: Date[] = [];
-                        for (let i=0;i<42;i++) { const d = new Date(gridStart); d.setDate(gridStart.getDate()+i); days.push(d); }
+                        for (let i = 0; i < 42; i++) { const d = new Date(gridStart); d.setDate(gridStart.getDate() + i); days.push(d); }
                         const eventsByDate = new Map<string, CalendarEvent[]>();
                         for (const ev of monthEvents) {
                             const closing = isClosure(ev);
@@ -940,13 +940,13 @@ const ScheduleView: React.FC = () => {
                                 {days.map((d, idx) => {
                                     const ds = d.toISOString().split('T')[0];
                                     const inMonth = d.getMonth() === monthAnchor.getMonth();
-                                    const items = (eventsByDate.get(ds) || []).slice(0,3);
+                                    const items = (eventsByDate.get(ds) || []).slice(0, 3);
                                     const extra = (eventsByDate.get(ds) || []).length - items.length;
                                     return (
                                         <div key={idx} className={`border rounded p-2 sm:h-24 h-20 flex flex-col ${inMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'}`}>
                                             <div className="text-xs font-semibold mb-1">{d.getDate()}</div>
                                             <div className="space-y-1 overflow-hidden">
-                                        {items.map((ev, i) => (
+                                                {items.map((ev, i) => (
                                                     <div key={i} className="text-[11px] truncate flex items-center gap-1">
                                                         <span className="text-[10px]">{iconFor(ev.type?.icon)}</span>
                                                         <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: ev.type?.color || '#9ca3af' }}></span>
@@ -988,12 +988,12 @@ const ScheduleView: React.FC = () => {
                                 const now = new Date();
                                 const todayStr = now.toISOString().split('T')[0];
                                 const mStart = new Date(monthAnchor); mStart.setDate(1);
-                                const mEnd = new Date(monthAnchor); mEnd.setMonth(mEnd.getMonth()+1); mEnd.setDate(0);
+                                const mEnd = new Date(monthAnchor); mEnd.setMonth(mEnd.getMonth() + 1); mEnd.setDate(0);
                                 const mStartStr = mStart.toISOString().split('T')[0];
                                 const mEndStr = mEnd.toISOString().split('T')[0];
                                 const list = [...monthEvents]
                                     .filter(ev => ev.endDate >= todayStr && ev.startDate <= mEndStr && ev.endDate >= mStartStr)
-                                    .sort((a,b) => a.startDate.localeCompare(b.startDate))
+                                    .sort((a, b) => a.startDate.localeCompare(b.startDate))
                                     .slice(0, 10);
                                 if (list.length === 0) return <div className="text-xs text-gray-500">No upcoming events.</div>;
                                 return list.map(ev => (
@@ -1009,32 +1009,32 @@ const ScheduleView: React.FC = () => {
                     </div>
                 </div>
             )}
-            
+
             {isAssignModalOpen && selectedShift && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
                     <Card className="w-full max-w-md">
                         <h2 className="text-xl font-bold mb-2">Assign Monitors</h2>
                         <p className="mb-4 text-gray-600">Period {selectedShift.period} on {selectedShift.date}</p>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
-                           {monitors.length === 0 ? (
-                               <div className="text-sm text-gray-500 p-2">No monitors available or you may not have permission.</div>
-                           ) : (
-                               monitors.map(m => (
-                                   <label key={m.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
-                                       <input
-                                           type="checkbox"
-                                           className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                           checked={assignedMonitors.has(m.id)}
-                                           onChange={() => handleMonitorSelection(m.id)}
-                                       />
-                                       <span>{m.name}</span>
-                                   </label>
-                               ))
-                           )}
+                            {monitors.length === 0 ? (
+                                <div className="text-sm text-gray-500 p-2">No monitors available or you may not have permission.</div>
+                            ) : (
+                                monitors.map(m => (
+                                    <label key={m.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            checked={assignedMonitors.has(m.id)}
+                                            onChange={() => handleMonitorSelection(m.id)}
+                                        />
+                                        <span>{m.name}</span>
+                                    </label>
+                                ))
+                            )}
                         </div>
                         <div className="mt-6 flex space-x-2">
-                           <Button onClick={() => setIsAssignModalOpen(false)} variant="secondary" className="w-full">Cancel</Button>
-                           <Button onClick={handleUpdateShift} className="w-full">Save Changes</Button>
+                            <Button onClick={() => setIsAssignModalOpen(false)} variant="secondary" className="w-full">Cancel</Button>
+                            <Button onClick={handleUpdateShift} className="w-full">Save Changes</Button>
                         </div>
                     </Card>
                 </div>
@@ -1065,13 +1065,13 @@ const ScheduleView: React.FC = () => {
                                     if (!bulkCopy.targetWeekStart) { alert('Select a target week start date.'); return; }
                                     const currentMonday = new Date(weekDates[0] + 'T00:00:00');
                                     const targetMonday = new Date(bulkCopy.targetWeekStart + 'T00:00:00');
-                                    const dayDiff = Math.round((targetMonday.getTime() - currentMonday.getTime()) / (1000*60*60*24));
+                                    const dayDiff = Math.round((targetMonday.getTime() - currentMonday.getTime()) / (1000 * 60 * 60 * 24));
                                     const closuresToCopy = weekEvents.filter(ev => isClosure(ev) && (ev.endDate >= weekDates[0] && ev.startDate <= weekDates[4]));
-                                    for (let w=0; w<bulkCopy.weeksCount; w++) {
-                                        const offsetDays = dayDiff + (7*w);
+                                    for (let w = 0; w < bulkCopy.weeksCount; w++) {
+                                        const offsetDays = dayDiff + (7 * w);
                                         for (const ev of closuresToCopy) {
-                                            const ns = new Date(ev.startDate + 'T00:00:00'); ns.setDate(ns.getDate()+offsetDays);
-                                            const ne = new Date(ev.endDate + 'T00:00:00'); ne.setDate(ne.getDate()+offsetDays);
+                                            const ns = new Date(ev.startDate + 'T00:00:00'); ns.setDate(ns.getDate() + offsetDays);
+                                            const ne = new Date(ev.endDate + 'T00:00:00'); ne.setDate(ne.getDate() + offsetDays);
                                             await api.createEvent({
                                                 title: ev.title,
                                                 typeId: ev.typeId,
@@ -1086,10 +1086,10 @@ const ScheduleView: React.FC = () => {
                                     }
                                     // refresh
                                     const start = weekDates[0];
-                                    const end = new Date(weekDates[4]); end.setDate(end.getDate()+1);
+                                    const end = new Date(weekDates[4]); end.setDate(end.getDate() + 1);
                                     const endStr = end.toISOString().split('T')[0];
-                                    try { setWeekEvents(await api.getEventsInRange(start, endStr)); } catch {}
-                                    try { setMonthEvents(await api.getEventsForMonth(monthParam(monthAnchor))); } catch {}
+                                    try { setWeekEvents(await api.getEventsInRange(start, endStr)); } catch { }
+                                    try { setMonthEvents(await api.getEventsForMonth(monthParam(monthAnchor))); } catch { }
                                     alert('Bulk copy complete.');
                                     setIsBulkCopyModalOpen(false);
                                 } catch (e) {
@@ -1214,10 +1214,10 @@ const ScheduleView: React.FC = () => {
                                             setIsClosureModalOpen(false);
                                             // refresh week/month events
                                             const start = weekDates[0];
-                                            const end = new Date(weekDates[4]); end.setDate(end.getDate()+1);
+                                            const end = new Date(weekDates[4]); end.setDate(end.getDate() + 1);
                                             const endStr = end.toISOString().split('T')[0];
-                                            try { setWeekEvents(await api.getEventsInRange(start, endStr)); } catch {}
-                                            try { setMonthEvents(await api.getEventsForMonth(monthParam(monthAnchor))); } catch {}
+                                            try { setWeekEvents(await api.getEventsInRange(start, endStr)); } catch { }
+                                            try { setMonthEvents(await api.getEventsForMonth(monthParam(monthAnchor))); } catch { }
                                         } catch (e) {
                                             alert('Failed to save changes.');
                                         }
@@ -1240,10 +1240,10 @@ const ScheduleView: React.FC = () => {
                                             } as any);
                                             // refresh without closing
                                             const start = weekDates[0];
-                                            const end = new Date(weekDates[4]); end.setDate(end.getDate()+1);
+                                            const end = new Date(weekDates[4]); end.setDate(end.getDate() + 1);
                                             const endStr = end.toISOString().split('T')[0];
-                                            try { setWeekEvents(await api.getEventsInRange(start, endStr)); } catch {}
-                                            try { setMonthEvents(await api.getEventsForMonth(monthParam(monthAnchor))); } catch {}
+                                            try { setWeekEvents(await api.getEventsInRange(start, endStr)); } catch { }
+                                            try { setMonthEvents(await api.getEventsForMonth(monthParam(monthAnchor))); } catch { }
                                             alert('Closure copied.');
                                         } catch (e) {
                                             alert('Failed to copy closure.');
@@ -1256,10 +1256,10 @@ const ScheduleView: React.FC = () => {
                                             await api.deleteEvent(closureEditingId);
                                             setIsClosureModalOpen(false);
                                             const start = weekDates[0];
-                                            const end = new Date(weekDates[4]); end.setDate(end.getDate()+1);
+                                            const end = new Date(weekDates[4]); end.setDate(end.getDate() + 1);
                                             const endStr = end.toISOString().split('T')[0];
-                                            try { setWeekEvents(await api.getEventsInRange(start, endStr)); } catch {}
-                                            try { setMonthEvents(await api.getEventsForMonth(monthParam(monthAnchor))); } catch {}
+                                            try { setWeekEvents(await api.getEventsInRange(start, endStr)); } catch { }
+                                            try { setMonthEvents(await api.getEventsForMonth(monthParam(monthAnchor))); } catch { }
                                         } catch (e) {
                                             alert('Failed to delete.');
                                         }
@@ -1283,14 +1283,14 @@ const ScheduleView: React.FC = () => {
                                     <div key={t.id} className="border rounded p-3 flex flex-col gap-2 bg-white">
                                         <div className="flex items-center gap-2">
                                             <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: t.color }}></span>
-                                            <input className="flex-1 p-2 border rounded" placeholder="Tag name" value={t.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => { const next=[...editableTypes]; (next[idx] as any).name=e.target.value; setEditableTypes(next); }} />
+                                            <input className="flex-1 p-2 border rounded" placeholder="Tag name" value={t.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => { const next = [...editableTypes]; (next[idx] as any).name = e.target.value; setEditableTypes(next); }} />
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <div className="flex items-center gap-2">
-                                                <input type="color" className="w-10 h-10 p-0 border rounded" value={t.color} onChange={(e: React.ChangeEvent<HTMLInputElement>) => { const next=[...editableTypes]; (next[idx] as any).color=e.target.value; setEditableTypes(next); }} />
-                                                <input className="flex-1 p-2 border rounded" value={t.color} onChange={(e: React.ChangeEvent<HTMLInputElement>) => { const next=[...editableTypes]; (next[idx] as any).color=e.target.value; setEditableTypes(next); }} />
+                                                <input type="color" className="w-10 h-10 p-0 border rounded" value={t.color} onChange={(e: React.ChangeEvent<HTMLInputElement>) => { const next = [...editableTypes]; (next[idx] as any).color = e.target.value; setEditableTypes(next); }} />
+                                                <input className="flex-1 p-2 border rounded" value={t.color} onChange={(e: React.ChangeEvent<HTMLInputElement>) => { const next = [...editableTypes]; (next[idx] as any).color = e.target.value; setEditableTypes(next); }} />
                                             </div>
-                                            <select className="p-2 border rounded" value={t.icon || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { const next=[...editableTypes]; (next[idx] as any).icon=e.target.value; setEditableTypes(next); }}>
+                                            <select className="p-2 border rounded" value={t.icon || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { const next = [...editableTypes]; (next[idx] as any).icon = e.target.value; setEditableTypes(next); }}>
                                                 <option value="">(no icon)</option>
                                                 <option value="ban">🚫 ban</option>
                                                 <option value="calendar">📅 calendar</option>
@@ -1302,15 +1302,15 @@ const ScheduleView: React.FC = () => {
                                             </select>
                                         </div>
                                         <div className="flex items-center gap-1 text-xs flex-wrap">
-                                            {['ban','calendar','wrench','star','info','alert','dot',''].map(k => (
-                                                <button key={k || 'none'} type="button" className={`px-2 py-1 border rounded ${t.icon===k ? 'bg-gray-200' : ''}`} onClick={() => { const next=[...editableTypes]; (next[idx] as any).icon=k; setEditableTypes(next); }}>
+                                            {['ban', 'calendar', 'wrench', 'star', 'info', 'alert', 'dot', ''].map(k => (
+                                                <button key={k || 'none'} type="button" className={`px-2 py-1 border rounded ${t.icon === k ? 'bg-gray-200' : ''}`} onClick={() => { const next = [...editableTypes]; (next[idx] as any).icon = k; setEditableTypes(next); }}>
                                                     <span className="mr-1">{iconFor(k)}</span>{k || 'none'}
                                                 </button>
                                             ))}
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <label className="flex items-center gap-1 text-xs">
-                                                <input type="checkbox" checked={!!t.closesLibrary} onChange={(e: React.ChangeEvent<HTMLInputElement>) => { const next=[...editableTypes]; (next[idx] as any).closesLibrary=e.target.checked; setEditableTypes(next); }} />
+                                                <input type="checkbox" checked={!!t.closesLibrary} onChange={(e: React.ChangeEvent<HTMLInputElement>) => { const next = [...editableTypes]; (next[idx] as any).closesLibrary = e.target.checked; setEditableTypes(next); }} />
                                                 Closes library
                                             </label>
                                             <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -1321,7 +1321,7 @@ const ScheduleView: React.FC = () => {
                                                     <span className="truncate max-w-[120px]">{t.name}</span>
                                                 </div>
                                             </div>
-                                            <Button variant="danger" onClick={async () => { try { await api.deleteEventType(t.id); setEditableTypes((et: EventType[]) => et.filter(x => x.id!==t.id)); setEventTypes((prev: EventType[])=>prev.filter(x=>x.id!==t.id)); } catch { alert('Failed to delete'); } }}>Delete</Button>
+                                            <Button variant="danger" onClick={async () => { try { await api.deleteEventType(t.id); setEditableTypes((et: EventType[]) => et.filter(x => x.id !== t.id)); setEventTypes((prev: EventType[]) => prev.filter(x => x.id !== t.id)); } catch { alert('Failed to delete'); } }}>Delete</Button>
                                         </div>
                                     </div>
                                 ))}
@@ -1341,8 +1341,8 @@ const ScheduleView: React.FC = () => {
             {isDefinitionModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
                     <Card className="w-full max-w-3xl">
-                         <h2 className="text-xl font-bold mb-4">Manage Periods</h2>
-                         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                        <h2 className="text-xl font-bold mb-4">Manage Periods</h2>
+                        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
                             {editedPeriodDefinitions.map((def, index) => (
                                 <div key={index} className="grid grid-cols-4 gap-3 items-center p-2 bg-gray-50 rounded-md">
                                     <div className="font-semibold">Period {def.period}</div>
@@ -1364,7 +1364,7 @@ const ScheduleView: React.FC = () => {
                                             className="w-full p-1 border rounded-md"
                                         />
                                     </div>
-                                     <div>
+                                    <div>
                                         <label className="text-xs">End Time</label>
                                         <input
                                             type="time"
@@ -1375,17 +1375,17 @@ const ScheduleView: React.FC = () => {
                                     </div>
                                 </div>
                             ))}
-                         </div>
-                         <div className="flex justify-between mt-4">
+                        </div>
+                        <div className="flex justify-between mt-4">
                             <div className="space-x-2">
                                 <Button onClick={addPeriod} variant="secondary">Add Period</Button>
                                 <Button onClick={removeLastPeriod} variant="danger">Remove Last</Button>
                             </div>
                             <div className="space-x-2">
-                               <Button onClick={() => setIsDefinitionModalOpen(false)} variant="secondary">Cancel</Button>
-                               <Button onClick={handleSaveDefinitions}>Save Definitions</Button>
+                                <Button onClick={() => setIsDefinitionModalOpen(false)} variant="secondary">Cancel</Button>
+                                <Button onClick={handleSaveDefinitions}>Save Definitions</Button>
                             </div>
-                         </div>
+                        </div>
                     </Card>
                 </div>
             )}

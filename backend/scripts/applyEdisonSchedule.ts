@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('⏰ Applying Edison 2023-2024 bell schedule...');
+  console.log('⏰ Applying Edison 2025-2026 bell schedule...');
   const edisonPeriods = [
     { period: 0, duration: 45, startTime: '07:00', endTime: '07:45' },
     { period: 1, duration: 46, startTime: '08:00', endTime: '08:46' },

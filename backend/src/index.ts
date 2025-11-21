@@ -8,6 +8,7 @@ import { prisma } from './lib/prisma';
 import { errorHandler, notFoundHandler, handleUnhandledRejection, handleUncaughtException } from './middleware/errorHandler';
 import { monitorConnectionPool, startCleanupScheduler, checkDatabaseHealth } from './lib/transactions';
 import { connectionLimiter, capacityCheck, getConnectionStats } from './middleware/connectionLimiter';
+import { startBackupScheduler } from './services/backupScheduler';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -145,11 +146,11 @@ app.get('/health', async (req, res) => {
       memory: process.memoryUsage(),
       nodeVersion: process.version
     };
-    
+
     if (!dbHealth.healthy) {
       return res.status(503).json(health);
     }
-    
+
     res.json(health);
   } catch (error) {
     res.status(503).json({
@@ -206,12 +207,13 @@ app.listen(PORT, HOST, () => {
   console.log(`🚀 Server running on ${HOST}:${PORT}`);
   console.log(`📊 Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/health`);
   console.log(`🌐 Server accessible from: ${HOST === '0.0.0.0' ? 'all network interfaces' : HOST}`);
-  
+
   // Initialize monitoring and cleanup in production
   if (process.env.NODE_ENV === 'production') {
     monitorConnectionPool();
     startCleanupScheduler();
-    console.log('📈 Database monitoring and cleanup scheduler started');
+    startBackupScheduler();
+    console.log('📈 Database monitoring, cleanup, and backup schedulers started');
   }
 });
 

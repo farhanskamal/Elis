@@ -7,44 +7,16 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // Create librarian user
-  const librarianPassword = await bcrypt.hash('password123', 12);
+  const librarianPassword = await bcrypt.hash('3di$onL', 12);
   const librarian = await prisma.user.upsert({
     where: { email: 'admin@school.edu' },
     update: {},
     create: {
-      name: 'Dr. Anya Sharma',
+      name: 'Edison ADMIN',
       email: 'admin@school.edu',
       password: librarianPassword,
       role: 'LIBRARIAN',
-      profilePicture: 'https://picsum.photos/seed/librarian/100/100',
-      backgroundColor: '#f3f4f6'
-    }
-  });
-
-  // Create monitor users  
-  const monitorPassword = await bcrypt.hash('password123', 12);
-  const monitor1 = await prisma.user.upsert({
-    where: { email: 'ben@student.school.edu' },
-    update: {},
-    create: {
-      name: 'Ben Carter',
-      email: 'ben@student.school.edu',
-      password: monitorPassword,
-      role: 'MONITOR',
-      profilePicture: 'https://picsum.photos/seed/ben/100/100',
-      backgroundColor: '#f3f4f6'
-    }
-  });
-
-  const monitor2 = await prisma.user.upsert({
-    where: { email: 'chloe@student.school.edu' },
-    update: {},
-    create: {
-      name: 'Chloe Davis',
-      email: 'chloe@student.school.edu',
-      password: monitorPassword,
-      role: 'MONITOR',
-      profilePicture: 'https://picsum.photos/seed/chloe/100/100',
+      profilePicture: 'https://pbs.twimg.com/profile_images/1436328729282764801/-bKoMQfK_400x400.jpg',
       backgroundColor: '#f3f4f6'
     }
   });
@@ -71,35 +43,6 @@ async function main() {
     });
   }
 
-  // Create sample shifts
-  const shift1 = await prisma.shift.upsert({
-    where: { date_period: { date: '2024-07-29', period: 3 } },
-    update: {},
-    create: {
-      date: '2024-07-29',
-      period: 3,
-      assignments: {
-        create: {
-          monitorId: monitor1.id
-        }
-      }
-    }
-  });
-
-  const shift2 = await prisma.shift.upsert({
-    where: { date_period: { date: '2024-07-29', period: 4 } },
-    update: {},
-    create: {
-      date: '2024-07-29',
-      period: 4,
-      assignments: {
-        create: {
-          monitorId: monitor2.id
-        }
-      }
-    }
-  });
-
   // Create sample magazines
   const magazines = [
     { title: 'National Geographic' },
@@ -121,97 +64,25 @@ async function main() {
     update: {},
     create: {
       id: 'sample-announcement',
-      title: 'Welcome Back!',
-      content: 'Welcome back to a new school year! We are excited to have our monitors back in the library.',
+      title: 'Welcome to Library Monitor Hub!',
+      content: 'Thank you for using Library Monitor Hub! We are excited to have our monitors back in the library.',
       authorId: librarian.id,
       authorName: librarian.name
-    }
-  });
-
-  // Create sample tasks
-  const task1 = await prisma.task.create({
-    data: {
-      title: 'Organize Biography Section',
-      description: 'Please organize the biography section (920-929) alphabetically by subject last name.',
-      priority: 'MEDIUM',
-      dueDate: '2024-08-15',
-      assignments: {
-        create: [
-          { monitorId: monitor1.id },
-          { monitorId: monitor2.id }
-        ]
-      },
-      statuses: {
-        create: [
-          { monitorId: monitor1.id, status: 'PENDING' },
-          { monitorId: monitor2.id, status: 'PENDING' }
-        ]
-      }
-    }
-  });
-
-  const task2 = await prisma.task.create({
-    data: {
-      title: 'Prepare New Book Cart',
-      description: 'Get the cart of new books ready for shelving. This includes stamping and adding security tags.',
-      priority: 'HIGH',
-      dueDate: '2024-08-01',
-      assignments: {
-        create: {
-          monitorId: monitor1.id
-        }
-      },
-      statuses: {
-        create: {
-          monitorId: monitor1.id,
-          status: 'COMPLETED',
-          completedAt: new Date()
-        }
-      }
-    }
-  });
-
-  // Create sample monitor logs
-  await prisma.monitorLog.create({
-    data: {
-      monitorId: monitor1.id,
-      monitorName: monitor1.name,
-      date: '2024-07-22',
-      period: 3,
-      checkIn: '10:05',
-      checkOut: '10:50',
-      durationMinutes: 45
-    }
-  });
-
-  await prisma.monitorLog.create({
-    data: {
-      monitorId: monitor2.id,
-      monitorName: monitor2.name,
-      date: '2024-07-22',
-      period: 4,
-      checkIn: '11:00',
-      checkOut: '11:45',
-      durationMinutes: 45
     }
   });
 
   // Create initial check-in code
   const expiresAt = new Date();
   expiresAt.setHours(expiresAt.getHours() + 24);
-  
+
   await prisma.checkinCode.create({
     data: {
-      code: '123456',
+      code: '28Q620',
       expiresAt
     }
   });
 
   console.log('✅ Database seeded successfully!');
-  console.log('📧 Login credentials:');
-  console.log('   Librarian: admin@school.edu / password123');
-  console.log('   Volunteer: ben@student.school.edu / password123');
-  console.log('   Volunteer: chloe@student.school.edu / password123');
 }
 
 main()

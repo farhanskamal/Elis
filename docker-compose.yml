@@ -1,0 +1,72 @@
+services:
+  # Frontend Service (React + Caddy)
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - app-network
+
+  # Backend Service (Node.js API)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/library_volunteer_hub
+      - PORT=3001
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-default_secret_change_me}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@school.edu}
+      - TZ=America/New_York
+    volumes:
+      - ./backups:/app/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "npx prisma db push && npm start"
+    restart: always
+    networks:
+      - app-network
+
+  # Database Service (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=library_volunteer_hub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - app-network
+  # Cloudflare Tunnel (Disabled in Docker - Run locally on Windows)
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   command: tunnel run
+  #   environment:
+  #     - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+  #   restart: always
+  #   networks:
+  #     - app-network
+  #   depends_on:
+  #     - frontend
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
