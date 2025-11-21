@@ -72,8 +72,15 @@ const MagazineTracker: React.FC = () => {
                 weekCounter++;
             }
         }
-        return weeks;
-    }, [currentDate]);
+    return weeks;
+}, [currentDate]);
+
+// Monthly identifier (safe namespace)
+const getMonthIdentifier = (d: Date): string => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    return `MONTH-${y}-${m}`;
+};
 
     const handleCheck = async (magazineId: string, weekIdentifier: string, isChecked: boolean) => {
         if (!user) return;
@@ -185,44 +192,29 @@ const MagazineTracker: React.FC = () => {
         document.body.removeChild(link);
     };
 
+    // Restrict monitors in non-kiosk mode
+    if (user?.role !== Role.Librarian) {
+        return (
+            <Card className="p-4 bg-blue-50 border-l-4 border-blue-500">
+                <p className="text-sm">Magazine Tracker is only available to librarians outside of kiosk. Please use Kiosk Mode to log magazine checks.</p>
+            </Card>
+        );
+    }
+
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
                  <h1 className="text-3xl font-bold text-gray-800">Magazine Tracker</h1>
                  <div className="flex items-center space-x-4">
-                    <Button onClick={exportToCsv} variant="secondary">Export CSV</Button>
                     {user?.role === Role.Librarian && (
                       <>
-                        <Button onClick={async () => {
-                          try {
-                            const data = await api.exportMagazines();
-                            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = 'magazines.json';
-                            a.click();
-                            URL.revokeObjectURL(url);
-                          } catch (e) {
-                            console.error('Export JSON failed', e);
-                          }
-                        }} variant="secondary">Export JSON</Button>
+                        <Button variant="secondary" onClick={async ()=>{ try{ const d=await api.exportMagazines(); const blob=new Blob([JSON.stringify(d,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='magazines.json'; a.click(); URL.revokeObjectURL(url);}catch(e){ try{ // Fallback: build JSON client-side if backend endpoint not available
+                          const d={ magazines: (magazines||[]).map((m:any)=>({ title:m.title })), logs: (magazineLogs||[]).map((l:any)=>({ magazineId:l.magazineId, weekIdentifier:l.weekIdentifier, checkedByMonitorId:l.checkedByMonitorId, timestamp:l.timestamp }))};
+                          const blob=new Blob([JSON.stringify(d,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='magazines.json'; a.click(); URL.revokeObjectURL(url);
+                        }catch{ alert('Export magazines JSON failed'); } } }}>Export JSON</Button>
                         <label className="inline-flex items-center">
-                          <input type="file" accept="application/json" className="hidden" onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            try {
-                              const text = await file.text();
-                              const parsed = JSON.parse(text);
-                              await api.importMagazines(parsed);
-                              fetchData();
-                            } catch (err) {
-                              console.error('Import JSON failed', err);
-                            } finally {
-                              e.currentTarget.value = '';
-                            }
-                          }} />
-                          <Button variant="secondary" onClick={(ev) => (ev.currentTarget.previousSibling as HTMLInputElement).click()}>Import JSON</Button>
+                          <input type="file" accept="application/json" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const p=JSON.parse(t); await api.importMagazines(p); fetchData(); }catch{ alert('Import magazines JSON failed'); } finally{ e.currentTarget.value=''; } }} />
+                          <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
                         </label>
                       </>
                     )}
@@ -246,6 +238,7 @@ const MagazineTracker: React.FC = () => {
                                 {weeksInMonth.map(week => (
                                     <th key={week.identifier} scope="col" className="px-4 py-3 text-center">{week.display}</th>
                                 ))}
+                                <th scope="col" className="px-4 py-3 text-center">Monthly</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -259,27 +252,55 @@ const MagazineTracker: React.FC = () => {
                                             </button>
                                         )}
                                     </td>
-                                    {weeksInMonth.map(week => {
-                                        const logInfo = getLogInfo(mag.id, week.identifier);
-                                        const isChecked = !!logInfo?.checked;
-                                        let canUncheck = false;
-                                        if (isChecked && user && logInfo?.log) {
-                                            canUncheck = user.role === Role.Librarian || user.id === logInfo.log.checkedByMonitorId;
-                                        }
-                                        const canCheck = !isChecked;
-                                        return (
-                                            <td key={`${mag.id}-${week.identifier}`} className="px-4 py-3 text-center relative group">
-                                                <input
-                                                    type="checkbox"
-                                                    className={`h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${(canCheck || canUncheck) ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                                                    checked={isChecked}
-                                                    onChange={(e) => handleCheck(mag.id, week.identifier, e.target.checked)}
-                                                    disabled={isChecked && !canUncheck}
-                                                />
-                                                {logInfo && <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">{logInfo.tooltip}</div>}
-                                            </td>
-                                        );
-                                    })}
+                                {weeksInMonth.map(week => {
+                                    const logInfo = getLogInfo(mag.id, week.identifier);
+                                    const isChecked = !!logInfo?.checked;
+                                    let canUncheck = false;
+                                    if (isChecked && user && logInfo?.log) {
+                                        canUncheck = user.role === Role.Librarian || user.id === logInfo.log.checkedByMonitorId;
+                                    }
+                                    const canCheck = !isChecked;
+                                    return (
+                                        <td key={`${mag.id}-${week.identifier}`} className="px-4 py-3 text-center relative group">
+                                            <input
+                                                type="checkbox"
+                                                className={`h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${(canCheck || canUncheck) ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                                                checked={isChecked}
+                                                onChange={(e) => handleCheck(mag.id, week.identifier, e.target.checked)}
+                                                disabled={isChecked && !canUncheck}
+                                            />
+                                            {logInfo && <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">{logInfo.tooltip}</div>}
+                                        </td>
+                                    );
+                                })}
+                                {/* Monthly column */}
+                                {(() => {
+                                    const monthId = getMonthIdentifier(currentDate);
+                                    const logInfo = getLogInfo(mag.id, monthId);
+                                    const isChecked = !!logInfo?.checked;
+                                    return (
+                                        <td className="px-4 py-3 text-center relative group">
+                                            <input
+                                                type="checkbox"
+                                                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                checked={isChecked}
+                                                onChange={async (e) => {
+                                                    try {
+                                                        if (e.target.checked) {
+                                                            await api.logMagazineCheck(mag.id, monthId);
+                                                        } else {
+                                                            await api.removeMagazineLog(mag.id, monthId);
+                                                        }
+                                                        fetchData();
+                                                    } catch (err) {
+                                                        console.error('Monthly toggle failed', err);
+                                                    }
+                                                }}
+                                            />
+                                            {logInfo && <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">{logInfo.tooltip}</div>}
+                                        </td>
+                                    );
+                                })()}
                                 </tr>
                             ))}
                         </tbody>

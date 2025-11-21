@@ -97,7 +97,18 @@ const LaptopCheckupPage: React.FC = () => {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e: any) {
-      notify({ type: 'error', title: 'Export Failed', message: e.message || 'Could not export' });
+      try {
+        const fallback = { laptops: (laptops||[]).map(l => ({ number: l.number, isAccessible: l.isAccessible, note: l.note||'' })) };
+        const blob = new Blob([JSON.stringify(fallback, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'laptops.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        notify({ type: 'error', title: 'Export Failed', message: e.message || 'Could not export' });
+      }
     }
   };
 

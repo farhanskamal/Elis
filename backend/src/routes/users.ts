@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { emitRoleChange } from './notifications';
+import { z } from 'zod';
 
 const router = express.Router();
 
@@ -206,6 +207,63 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
   } catch (error) {
     console.error('Create user error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Export users (librarian only)
+router.get('/export/json', authenticateToken, requireRole(['LIBRARIAN']), async (_req, res) => {
+  try {
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@school.edu';
+    const users = await prisma.user.findMany({
+      where: { email: { not: ADMIN_EMAIL } },
+      select: { name: true, email: true, role: true, profilePicture: true, backgroundColor: true, themePreferences: true }
+    });
+    res.json({ users });
+  } catch (e) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Import users (librarian only, upsert by email)
+router.post('/import/json', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
+  try {
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@school.edu';
+    const schema = z.object({ users: z.array(z.object({
+      name: z.string().min(1),
+      email: z.string().email(),
+      role: z.enum(['LIBRARIAN', 'MONITOR']).optional(),
+      profilePicture: z.string().nullable().optional(),
+      backgroundColor: z.string().nullable().optional(),
+      themePreferences: z.any().optional()
+    }))});
+    const { users } = schema.parse(req.body);
+    for (const u of users) {
+      if (u.email === ADMIN_EMAIL) continue;
+      const existing = await prisma.user.findUnique({ where: { email: u.email } });
+      if (existing) {
+        await prisma.user.update({ where: { email: u.email }, data: {
+          name: u.name,
+          role: (u.role as any) ?? existing.role,
+          profilePicture: u.profilePicture ?? existing.profilePicture,
+          backgroundColor: u.backgroundColor ?? existing.backgroundColor,
+          themePreferences: u.themePreferences ?? existing.themePreferences,
+        }});
+      } else {
+        // create with temporary password
+        await prisma.user.create({ data: {
+          name: u.name,
+          email: u.email,
+          password: await (await import('bcryptjs')).default.hash('ChangeMe123!', 12),
+          role: (u.role as any) ?? 'MONITOR',
+          profilePicture: u.profilePicture ?? null,
+          backgroundColor: u.backgroundColor ?? '#f3f4f6',
+          themePreferences: u.themePreferences ?? undefined,
+        }});
+      }
+    }
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(400).json({ error: e.message || 'Invalid payload' });
   }
 });
 

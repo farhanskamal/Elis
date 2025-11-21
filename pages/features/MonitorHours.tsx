@@ -176,20 +176,36 @@ const MonitorHours: React.FC<MonitorHoursProps> = ({ monitorId }) => {
         <Card>
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2">{title}</h1>
-                    <p className="text-gray-600">{subTitle}</p>
+                    <h1 className="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-2">{title}</h1>
+                    <p className="text-gray-600 dark:text-slate-300">{subTitle}</p>
                 </div>
                 {user?.role === Role.Librarian && (
+                  <div className="flex items-center gap-2">
+                    {!monitorId && (
+                      <>
+                        <Button variant="secondary" onClick={async ()=>{ try{ const data=await api.exportMonitorLogs(); const blob=new Blob([JSON.stringify(data,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='monitor_logs.json'; a.click(); URL.revokeObjectURL(url);}catch{ try{ const fallback={ logs: logs.map(l=>({ monitorId:l.monitorId, date:l.date, period:l.period, durationMinutes: l.durationMinutes??null })) }; const blob=new Blob([JSON.stringify(fallback,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='monitor_logs.json'; a.click(); URL.revokeObjectURL(url);}catch{ alert('Export failed'); } } }}>Export JSON</Button>
+                        <label className="inline-flex items-center">
+                          <input type="file" accept="application/json" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const p=JSON.parse(t); await api.importMonitorLogs(p.logs||[]); fetchLogs(); }catch{ alert('Import failed'); } finally{ e.currentTarget.value=''; } }} />
+                          <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
+                        </label>
+                        <Button variant="secondary" onClick={async ()=>{ try{ const data=await api.exportMonitorLogs(); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('monitor_logs.csv', data.logs, ['monitorId','date','period','durationMinutes']); }catch{ try{ const { downloadCsv } = await import('../../utils/csv'); downloadCsv('monitor_logs.csv', logs.map(l=>({ monitorId:l.monitorId, date:l.date, period:l.period, durationMinutes: l.durationMinutes??'' })), ['monitorId','date','period','durationMinutes']); }catch{ alert('Export CSV failed'); } } }}>Export CSV</Button>
+                        <label className="inline-flex items-center">
+                          <input type="file" accept="text/csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows=parseCsv(t); const logs = rows.map(r=>({ monitorId:r.monitorId, date:r.date, period:Number(r.period), durationMinutes: r.durationMinutes? Number(r.durationMinutes): null })); await api.importMonitorLogs(logs); fetchLogs(); }catch{ alert('Import CSV failed'); } finally { e.currentTarget.value=''; } }} />
+                          <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
+                        </label>
+                      </>
+                    )}
                     <Button onClick={() => setIsAddHoursModalOpen(true)}>
                         <PlusIcon className="w-4 h-4 mr-2" />
                         Add Hours
                     </Button>
+                  </div>
                 )}
             </div>
             {loading ? <div className="flex justify-center items-center h-40"><Spinner /></div> : (
                  <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-gray-500">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                        <thead className="text-xs text-gray-700 dark:text-slate-200 uppercase bg-gray-50 dark:bg-slate-700">
                             <tr>
                                 {!monitorId && <th scope="col" className="px-6 py-3">Monitor</th>}
                                 <th scope="col" className="px-6 py-3">Date</th>
@@ -200,7 +216,7 @@ const MonitorHours: React.FC<MonitorHoursProps> = ({ monitorId }) => {
                         </thead>
                         <tbody>
                             {logs.map(log => (
-                                <tr key={log.id} className="bg-white border-b">
+                                <tr key={log.id} className="bg-white dark:bg-slate-800 dark:text-slate-100 border-b dark:border-slate-700">
                                     {!monitorId && <td className="px-6 py-4 font-medium text-gray-900">{log.monitorName}</td>}
                                     <td className="px-6 py-4">{editingLog?.id === log.id ? <input type="date" name="date" value={editingLog.date} onChange={handleEditChange} className="p-1 border rounded-md" /> : new Date(log.date + 'T12:00:00Z').toLocaleDateString()}</td>
                                     <td className="px-6 py-4">{editingLog?.id === log.id ? <input type="number" name="period" value={editingLog.period} onChange={handleEditChange} className="w-16 p-1 border rounded-md" /> : log.period}</td>

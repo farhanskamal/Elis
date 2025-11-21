@@ -6,6 +6,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
 import MonitorProfileModal from './MonitorProfileModal';
+import { downloadCsv, parseCsv } from '../../utils/csv';
 
 const UserManagement: React.FC = () => {
     const { user } = useContext(AuthContext);
@@ -57,14 +58,38 @@ const UserManagement: React.FC = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
-                <Button onClick={() => setIsCreateModalOpen(true)}>Add Monitor</Button>
+                <h1 className="text-3xl font-bold text-gray-800 dark:text-slate-100">User Management</h1>
+                {user?.role === Role.Librarian && (
+                  <div className="flex items-center gap-2">
+                    <details className="group inline-block relative">
+                      <summary className="list-none"><Button variant="secondary">Import/Export</Button></summary>
+                      <div className="absolute mt-2 right-0 z-10 bg-white dark:bg-slate-800 dark:text-slate-100 border border-gray-200 dark:border-slate-700 rounded shadow p-3 space-y-2 w-64">
+                        <div className="text-xs font-semibold">Users</div>
+                        <div className="flex gap-2">
+                          <Button variant="secondary" className="text-xs" onClick={async ()=>{ try{ const data = await api.exportUsers(); const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' }); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='users.json'; a.click(); URL.revokeObjectURL(url);} catch { try{ const fallback={ users: monitors.map(u=>({ name:u.name, email:u.email, role:u.role, profilePicture:u.profilePicture||null, backgroundColor:u.backgroundColor||null }))}; const blob = new Blob([JSON.stringify(fallback, null, 2)], { type:'application/json' }); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='users.json'; a.click(); URL.revokeObjectURL(url);} catch { alert('Export JSON failed'); } } }}>Export JSON</Button>
+                          <label className="inline-flex items-center">
+                            <input type="file" accept="application/json" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const p=JSON.parse(t); await api.importUsers(p.users||[]); fetchMonitors(); }catch{ alert('Import JSON failed'); } finally{ e.currentTarget.value=''; } }} />
+                            <Button variant="secondary" className="text-xs" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
+                          </label>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="secondary" className="text-xs" onClick={async ()=>{ try{ const data=await api.exportUsers(); downloadCsv('users.csv', data.users, ['name','email','role','profilePicture','backgroundColor']); }catch{ try{ downloadCsv('users.csv', monitors.map(u=>({ name:u.name, email:u.email, role:u.role, profilePicture:u.profilePicture||'', backgroundColor:u.backgroundColor||'' })), ['name','email','role','profilePicture','backgroundColor']); }catch{ alert('Export CSV failed'); } } }}>Export CSV</Button>
+                          <label className="inline-flex items-center">
+                            <input type="file" accept="text/csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const rows=parseCsv(t); const users = rows.map(r=>({ name:r.name, email:r.email, role:(r.role as any)||undefined, profilePicture:r.profilePicture||null, backgroundColor:r.backgroundColor||null })); await api.importUsers(users); fetchMonitors(); }catch{ alert('Import CSV failed'); } finally{ e.currentTarget.value=''; } }} />
+                            <Button variant="secondary" className="text-xs" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
+                          </label>
+                        </div>
+                      </div>
+                    </details>
+                    <Button onClick={() => setIsCreateModalOpen(true)}>Add Monitor</Button>
+                  </div>
+                )}
             </div>
 
             <Card>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-gray-500">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                        <thead className="text-xs text-gray-700 dark:text-slate-200 uppercase bg-gray-50 dark:bg-slate-700">
                             <tr>
                                 <th scope="col" className="px-6 py-3">Name</th>
                                 <th scope="col" className="px-6 py-3">Email</th>
@@ -74,7 +99,7 @@ const UserManagement: React.FC = () => {
                         </thead>
                         <tbody>
                             {monitors.map(mon => (
-                                <tr key={mon.id} className="bg-white border-b hover:bg-gray-50">
+                                <tr key={mon.id} className="bg-white dark:bg-slate-800 dark:text-slate-100 border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700">
                                     <td className="px-6 py-4 font-medium text-gray-900 flex items-center space-x-3">
                                         <img className="h-8 w-8 rounded-full" src={mon.profilePicture} alt={`${mon.name}'s profile`} />
                                         <span>{mon.name}</span>

@@ -5,6 +5,8 @@ export type Theme = {
   primary: string; // hex
   secondary: string; // hex
   background: string; // hex
+  textPrimary: string; // hex
+  textSecondary: string; // hex
 };
 
 type ThemeContextType = {
@@ -19,6 +21,8 @@ const DEFAULT_THEME: Theme = {
   primary: '#2563eb',
   secondary: '#64748b',
   background: '#f9fafb',
+  textPrimary: '#111827',
+  textSecondary: '#6b7280',
 };
 
 export const ThemeContext = createContext<ThemeContextType>({
@@ -36,9 +40,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     root.style.setProperty('--color-primary', t.primary);
     root.style.setProperty('--color-secondary', t.secondary);
     root.style.setProperty('--color-bg', t.background);
+    root.style.setProperty('--text-primary', t.textPrimary);
+    root.style.setProperty('--text-secondary', t.textSecondary);
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const isDark = t.mode === 'dark' || (t.mode === 'system' && prefersDark);
-    root.classList.toggle('theme-dark', isDark);
+    root.classList.toggle('dark', isDark);
   };
 
   useEffect(() => {

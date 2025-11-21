@@ -15,8 +15,8 @@ const NavLink: React.FC<{ text: string; icon: ReactNode; isActive: boolean; onCl
         onClick={onClick}
         className={`flex items-center p-2 text-base font-normal rounded-lg cursor-pointer transition-colors ${
             isActive
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-900 hover:bg-gray-100'
+                ? 'bg-blue-100 text-blue-700 dark:bg-slate-800 dark:text-blue-300'
+                : 'text-gray-900 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800'
         }`}
     >
         {icon}
@@ -33,12 +33,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveView }) 
     const commonLinks = [
         { id: 'dashboard', text: 'Dashboard', icon: <HomeIcon /> },
         { id: 'schedule', text: 'Schedule', icon: <CalendarIcon /> },
-        { id: 'magazines', text: 'Magazines', icon: <BookOpenIcon /> },
         { id: 'laptops', text: 'Laptop Check Up', icon: <LaptopIcon /> },
     ];
     
     const librarianLinks = [
         ...commonLinks,
+        { id: 'magazines', text: 'Magazines', icon: <BookOpenIcon /> },
         { id: 'tasks', text: 'Assign Tasks', icon: <ClipboardListIcon /> },
         { id: 'announcements', text: 'Announcements', icon: <MegaphoneIcon /> },
         { id: 'users', text: 'Manage Users', icon: <UsersIcon /> },
@@ -62,7 +62,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveView }) 
     };
 
     const sidebar = (
-        <aside className={`fixed top-0 left-0 z-40 w-64 h-screen transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} sm:translate-x-0 bg-white shadow-md`}>
+        <aside className={`fixed top-0 left-0 z-40 w-64 h-screen transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} sm:translate-x-0 bg-white dark:bg-slate-900 dark:text-slate-100 shadow-md`}>
             <div className="h-full px-3 py-4 overflow-y-auto">
                 <a href="#" className="flex items-center pl-2.5 mb-5">
                     <img src="/TaehsLibraryLogo.png" alt="Library Logo" className="h-8 w-auto" />
@@ -87,12 +87,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveView }) 
       <div className="flex" style={{ backgroundColor: 'var(--color-bg)' }}>
         {sidebar}
         <div className="flex flex-col flex-1 sm:ml-64">
-          <header className="flex items-center justify-between p-4 bg-white border-b border-gray-200 sm:justify-end">
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="sm:hidden p-2 text-gray-600 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200">
+          <header className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 dark:border-slate-700 border-b border-gray-200 sm:justify-end">
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="sm:hidden p-2 text-gray-600 dark:text-slate-300 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-gray-200">
                   <MenuIcon/>
               </button>
               <div className="flex items-center">
-                  <button onClick={() => setIsProfileModalOpen(true)} className="flex items-center text-left rounded-md p-1 hover:bg-gray-100">
+                  <button onClick={() => setIsProfileModalOpen(true)} className="flex items-center text-left rounded-md p-1 hover:bg-gray-100 dark:hover:bg-slate-800">
                       <span className="mr-3 font-medium">{user?.name}</span>
                       <img className="w-8 h-8 rounded-full" src={user?.profilePicture} alt="user photo" />
                   </button>

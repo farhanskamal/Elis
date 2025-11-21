@@ -27,7 +27,9 @@ const UserProfileModal: React.FC<Props> = ({ user, onClose }) => {
         mode: userTheme.mode || 'system',
         primary: userTheme.primary || '#2563eb',
         secondary: userTheme.secondary || '#64748b',
-        background: userTheme.background || '#f9fafb'
+        background: userTheme.background || '#f9fafb',
+        textPrimary: userTheme.textPrimary || '#111827',
+        textSecondary: userTheme.textSecondary || '#6b7280'
     });
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,7 +156,7 @@ const UserProfileModal: React.FC<Props> = ({ user, onClose }) => {
                             <button type="button" onClick={() => setTheme({ ...theme, mode: 'light' })} className={`p-2 rounded-md border ${theme.mode==='light' ? 'border-blue-500' : 'border-gray-200'} bg-white`}>Light</button>
                             <button type="button" onClick={() => setTheme({ ...theme, mode: 'dark' })} className={`p-2 rounded-md border ${theme.mode==='dark' ? 'border-blue-500' : 'border-gray-200'} bg-slate-900 text-white`}>Dark</button>
                         </div>
-                        <div className="mt-3 grid grid-cols-3 gap-3">
+                        <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div>
                                 <label className="block text-xs text-gray-500 mb-1">Primary</label>
                                 <input
@@ -182,9 +184,27 @@ const UserProfileModal: React.FC<Props> = ({ user, onClose }) => {
                                     className="h-10 w-full p-1 border rounded-md"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Text Primary</label>
+                                <input
+                                    type="color"
+                                    value={theme.textPrimary}
+                                    onChange={(e) => setTheme({ ...theme, textPrimary: e.target.value })}
+                                    className="h-10 w-full p-1 border rounded-md"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Text Secondary</label>
+                                <input
+                                    type="color"
+                                    value={theme.textSecondary}
+                                    onChange={(e) => setTheme({ ...theme, textSecondary: e.target.value })}
+                                    className="h-10 w-full p-1 border rounded-md"
+                                />
+                            </div>
                         </div>
                         <div className="mt-3 flex gap-2">
-                            <Button type="button" variant="secondary" onClick={() => setTheme({ mode: 'system', primary: '#2563eb', secondary: '#64748b', background: '#f9fafb' })}>Reset</Button>
+                            <Button type="button" variant="secondary" onClick={() => setTheme({ mode: 'system', primary: '#2563eb', secondary: '#64748b', background: '#f9fafb', textPrimary: '#111827', textSecondary: '#6b7280' })}>Reset</Button>
                         </div>
                     </div>
                     <div className="flex justify-end space-x-2 pt-2">

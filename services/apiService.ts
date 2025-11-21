@@ -445,6 +445,50 @@ class ApiService {
     return this.request<{ success: boolean }>(`/events/${id}`, { method: 'DELETE' });
   }
 
+  // --- IMPORT/EXPORT ---
+  // Users
+  async exportUsers(): Promise<{ users: Array<{ name: string; email: string; role: string; profilePicture?: string | null; backgroundColor?: string | null; themePreferences?: any }> }> {
+    return this.request(`/users/export/json`);
+  }
+  async importUsers(users: Array<{ name: string; email: string; role?: 'LIBRARIAN' | 'MONITOR'; profilePicture?: string | null; backgroundColor?: string | null; themePreferences?: any }>): Promise<{ success: boolean }> {
+    return this.request(`/users/import/json`, { method: 'POST', body: JSON.stringify({ users }) });
+  }
+  // Shifts
+  async exportShifts(): Promise<{ shifts: Array<{ date: string; period: number; monitorIds: string[] }> }> {
+    return this.request(`/shifts/export/json`);
+  }
+  async importShifts(shifts: Array<{ date: string; period: number; monitorIds: string[] }>): Promise<{ success: boolean }> {
+    return this.request(`/shifts/import/json`, { method: 'POST', body: JSON.stringify({ shifts }) });
+  }
+  // Monitor logs
+  async exportMonitorLogs(): Promise<{ logs: Array<{ monitorId: string; date: string; period: number; durationMinutes?: number | null }> }> {
+    return this.request(`/monitor-logs/export/json`);
+  }
+  async importMonitorLogs(logs: Array<{ monitorId: string; date: string; period: number; durationMinutes?: number | null }>): Promise<{ success: boolean }> {
+    return this.request(`/monitor-logs/import/json`, { method: 'POST', body: JSON.stringify({ logs }) });
+  }
+  // Announcements
+  async exportAnnouncements(): Promise<{ announcements: Array<{ title: string; content: string; imageUrl?: string | null; createdAt: string }> }> {
+    return this.request(`/announcements/export/json`);
+  }
+  async importAnnouncements(announcements: Array<{ title: string; content: string; imageUrl?: string | null; createdAt?: string }>): Promise<{ success: boolean }> {
+    return this.request(`/announcements/import/json`, { method: 'POST', body: JSON.stringify({ announcements }) });
+  }
+  // Periods
+  async exportPeriods(): Promise<{ definitions: Array<{ period: number; duration: number; startTime: string; endTime: string }> }> {
+    return this.request(`/periods/export/json`);
+  }
+  async importPeriods(definitions: Array<{ period: number; duration: number; startTime: string; endTime: string }>): Promise<{ success: boolean; definitions: any[] }> {
+    return this.request(`/periods/import/json`, { method: 'POST', body: JSON.stringify({ definitions }) });
+  }
+  // Event types
+  async exportEventTypes(): Promise<{ types: Array<{ name: string; color: string; icon?: string; closesLibrary?: boolean }> }> {
+    return this.request(`/event-types/export/json`);
+  }
+  async importEventTypes(types: Array<{ name: string; color: string; icon?: string; closesLibrary?: boolean }>): Promise<{ success: boolean }> {
+    return this.request(`/event-types/import/json`, { method: 'POST', body: JSON.stringify({ types }) });
+  }
+
   // --- LAPTOPS ---
   async getLaptops(): Promise<Laptop[]> {
     return this.request<Laptop[]>('/laptops');

@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import { z } from 'zod';
 
 const router = express.Router();
 
@@ -91,13 +92,11 @@ router.delete('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req,
 // Log magazine check (uses authenticated user as monitor)
 router.post('/:id/log', authenticateToken, async (req, res) => {
   try {
-    const { id: magazineId } = req.params;
-    const { weekIdentifier } = req.body;
+    const paramsSchema = z.object({ id: z.string().min(1) });
+    const bodySchema = z.object({ weekIdentifier: z.string().min(3).max(20) });
+    const { id: magazineId } = paramsSchema.parse(req.params);
+    const { weekIdentifier } = bodySchema.parse(req.body);
     const monitorId = (req as any).user.id;
-
-    if (!weekIdentifier) {
-      return res.status(400).json({ error: 'Week identifier is required' });
-    }
 
     // Check if magazine exists
     const magazine = await prisma.magazine.findUnique({
@@ -150,8 +149,11 @@ router.post('/:id/log', authenticateToken, async (req, res) => {
 // Remove magazine log (librarian only)
 router.delete('/:id/log/:weekIdentifier', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {
-    const { id: magazineId, weekIdentifier } = req.params;
-
+    const paramsSchema = z.object({ id: z.string().min(1), weekIdentifier: z.string().min(3).max(20) });
+    const querySchema = z.object({ monitorId: z.string().min(1).optional() });
+    const { id: magazineId, weekIdentifier } = paramsSchema.parse(req.params as any);
+    const { monitorId } = querySchema.parse(req.query as any);
+    const actorMonitorId = monitorId || undefined;
     // Check if log exists
     const existingLog = await prisma.magazineLog.findUnique({
       where: {
@@ -185,12 +187,10 @@ router.delete('/:id/log/:weekIdentifier', authenticateToken, requireRole(['LIBRA
 // Log magazine check on behalf of a monitor (librarian only)
 router.post('/:id/log-as', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {
-    const { id: magazineId } = req.params;
-    const { weekIdentifier, monitorId } = req.body as { weekIdentifier?: string, monitorId?: string };
-
-    if (!weekIdentifier || !monitorId) {
-      return res.status(400).json({ error: 'weekIdentifier and monitorId are required' });
-    }
+    const paramsSchema = z.object({ id: z.string().min(1) });
+    const bodySchema = z.object({ weekIdentifier: z.string().min(3).max(20), monitorId: z.string().min(1) });
+    const { id: magazineId } = paramsSchema.parse(req.params);
+    const { weekIdentifier, monitorId } = bodySchema.parse(req.body);
 
     const magazine = await prisma.magazine.findUnique({ where: { id: magazineId } });
     if (!magazine) {

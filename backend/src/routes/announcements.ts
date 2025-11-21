@@ -148,6 +148,32 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
   }
 });
 
+// Export announcements (librarian only)
+router.get('/export/json', authenticateToken, requireRole(['LIBRARIAN']), async (_req, res) => {
+  try {
+    const list = await prisma.announcement.findMany({ orderBy: { createdAt: 'asc' } });
+    const payload = list.map(a => ({ title: a.title, content: a.content, imageUrl: a.imageUrl || null, createdAt: a.createdAt }));
+    res.json({ announcements: payload });
+  } catch (e) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Import announcements (librarian only)
+router.post('/import/json', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
+  try {
+    const actorId = (req as any).user.id as string;
+    const entries = Array.isArray(req.body?.announcements) ? req.body.announcements : [];
+    for (const e of entries) {
+      if (!e?.title || !e?.content) continue;
+      await prisma.announcement.create({ data: { title: e.title, content: e.content, imageUrl: e.imageUrl || null, authorId: actorId, authorName: (await prisma.user.findUnique({ where: { id: actorId }, select: { name: true } }))?.name || 'Librarian', createdAt: e.createdAt ? new Date(e.createdAt) : undefined } });
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(400).json({ error: 'Invalid import payload' });
+  }
+});
+
 // Delete announcement (librarian only)
 router.delete('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {

@@ -117,11 +117,25 @@ const Announcements: React.FC = () => {
         <div>
             <div className="flex justify-between items-center mb-6">
                  <h1 className="text-3xl font-bold text-gray-800">Announcements</h1>
-                 {user?.role === Role.Librarian && !isFormOpen && (
-                    <Button onClick={() => setIsFormOpen(true)}>
-                        <PlusIcon className="w-4 h-4 mr-2" />
-                        Create New Announcement
-                    </Button>
+                 {user?.role === Role.Librarian && (
+                   <div className="flex items-center gap-2">
+                     {!isFormOpen && (
+                       <Button onClick={() => setIsFormOpen(true)}>
+                         <PlusIcon className="w-4 h-4 mr-2" />
+                         Create New Announcement
+                       </Button>
+                     )}
+                     <Button variant="secondary" onClick={async ()=>{ try{ const d=await api.exportAnnouncements(); const blob=new Blob([JSON.stringify(d,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='announcements.json'; a.click(); URL.revokeObjectURL(url);}catch{ try{ const fallback={ announcements: announcements.map(a=>({ title:a.title, content:a.content, imageUrl:a.imageUrl||null, createdAt:a.createdAt }))}; const blob=new Blob([JSON.stringify(fallback,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='announcements.json'; a.click(); URL.revokeObjectURL(url);}catch{ alert('Export JSON failed'); } } }}>Export JSON</Button>
+                     <label className="inline-flex items-center">
+                       <input type="file" accept="application/json" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const p=JSON.parse(t); await api.importAnnouncements(p.announcements||[]); fetchAnnouncements(); }catch{ alert('Import JSON failed'); } finally{ e.currentTarget.value=''; } }} />
+                       <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import JSON</Button>
+                     </label>
+                     <Button variant="secondary" onClick={async ()=>{ try{ const d=await api.exportAnnouncements(); const rows = d.announcements.map(a=>({ title:a.title, content:a.content, imageUrl:a.imageUrl||'', createdAt:a.createdAt })); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('announcements.csv', rows, ['title','content','imageUrl','createdAt']); }catch{ try{ const rows = announcements.map(a=>({ title:a.title, content:a.content, imageUrl:a.imageUrl||'', createdAt:a.createdAt })); const { downloadCsv } = await import('../../utils/csv'); downloadCsv('announcements.csv', rows, ['title','content','imageUrl','createdAt']); }catch{ alert('Export CSV failed'); } } }}>Export CSV</Button>
+                     <label className="inline-flex items-center">
+                       <input type="file" accept="text/csv" className="hidden" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; try{ const t=await f.text(); const { parseCsv } = await import('../../utils/csv'); const rows=parseCsv(t); const arr = rows.map(r=>({ title:r.title, content:r.content, imageUrl: r.imageUrl||undefined, createdAt: r.createdAt||undefined })); await api.importAnnouncements(arr); fetchAnnouncements(); }catch{ alert('Import CSV failed'); } finally{ e.currentTarget.value=''; } }} />
+                       <Button variant="secondary" onClick={(ev)=> ((ev.currentTarget.previousElementSibling as HTMLInputElement) || (ev.currentTarget.parentElement?.querySelector('input[type=file]') as HTMLInputElement))?.click()}>Import CSV</Button>
+                     </label>
+                   </div>
                  )}
             </div>
             

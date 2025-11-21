@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apply theme variables */
+:root {
+  --color-primary: #2563eb;
+  --color-secondary: #64748b;
+  --color-bg: #f9fafb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+}
+
+html, body {
+  background-color: var(--color-bg);
+  color: var(--text-primary);
+}
+
+/* Dark mode variable overrides */
+.dark {
+  --color-bg: #111827;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+}
+
+.text-primary-var { color: var(--text-primary); }
+.text-secondary-var { color: var(--text-secondary); }
+.bg-primary-var { background-color: var(--color-primary); }
+.bg-secondary-var { background-color: var(--color-secondary); }

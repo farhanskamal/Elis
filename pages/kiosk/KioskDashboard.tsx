@@ -248,8 +248,22 @@ const KioskDashboard: React.FC = () => {
     return weeks;
   }, [magMonthDate]);
 
+  const getMonthIdentifierKiosk = (d: Date): string => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    return `MONTH-${y}-${m}`;
+  };
+
   const isMagWeekChecked = (magazineId: string, weekIdentifier: string) =>
     !!magazineLogs.find(l => l.magazineId === magazineId && l.weekIdentifier === weekIdentifier);
+  const getMagLogInfo = (magazineId: string, identifier: string) => {
+    const log = magazineLogs.find(l => l.magazineId === magazineId && l.weekIdentifier === identifier);
+    if (!log) return null;
+    const mon = monitors.find(m => m.id === log.checkedByMonitorId);
+    const name = mon?.name || log.checkedByMonitorId;
+    const when = new Date(log.timestamp).toLocaleString();
+    return `${name} • ${when}`;
+  };
 
   const toggleMagazineWeek = async (magazineId: string, weekIdentifier: string, checked: boolean) => {
     if (!selectedMonitor) return;
@@ -450,6 +464,7 @@ const KioskDashboard: React.FC = () => {
                       {weeksInMonth.map(w => (
                         <th key={w.identifier} className="px-3 py-2 text-center">{w.display}</th>
                       ))}
+                      <th className="px-3 py-2 text-center">Monthly</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -462,13 +477,56 @@ const KioskDashboard: React.FC = () => {
                             <td key={`${m.id}-${w.identifier}`} className="px-3 py-2 text-center">
                               <input
                                 type="checkbox"
-                                disabled={!selectedMonitor || checked}
+                                disabled={!selectedMonitor}
                                 checked={checked}
-                                onChange={e => e.target.checked && toggleMagazineWeek(m.id, w.identifier, true)}
+                                onChange={e => toggleMagazineWeek(m.id, w.identifier, e.target.checked)}
                               />
+                              {checked && (
+                                <div className="mt-1 text-[10px] text-gray-500">{getMagLogInfo(m.id, w.identifier)}</div>
+                              )}
                             </td>
                           );
                         })}
+                        {/* Monthly column */}
+                        {(() => {
+                          const monthId = getMonthIdentifierKiosk(magMonthDate);
+                          const checked = isMagWeekChecked(m.id, monthId);
+                          return (
+                            <td className="px-3 py-2 text-center">
+                              <input
+                                type="checkbox"
+                                disabled={!selectedMonitor}
+                                checked={checked}
+                                onChange={async (e) => {
+                                  const want = e.target.checked;
+                                  if (want) {
+                                    try {
+                                      await api.logMagazineCheckAs(m.id, monthId, selectedMonitor!.id);
+                                    } catch (err: any) {
+                                      if ((err?.message || '').toLowerCase().includes('not found')) {
+                                        await api.logMagazineCheck(m.id, monthId);
+                                      } else {
+                                        throw err;
+                                      }
+                                    }
+                                  } else {
+                                    const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001/api';
+                                    const token = localStorage.getItem('authToken');
+                                    await fetch(`${API_BASE}/magazines/${m.id}/log/${monthId}?monitorId=${encodeURIComponent(selectedMonitor!.id)}`, {
+                                      method: 'DELETE',
+                                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+                                    });
+                                  }
+                                  const logs = await api.getMagazineLogs();
+                                  setMagazineLogs(logs);
+                                }}
+                              />
+                              {checked && (
+                                <div className="mt-1 text-[10px] text-gray-500">{getMagLogInfo(m.id, monthId)}</div>
+                              )}
+                            </td>
+                          );
+                        })()}
                       </tr>
                     ))}
                   </tbody>

@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import { z } from 'zod';
 
 const router = express.Router();
 
@@ -205,6 +206,38 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
   } catch (error) {
     console.error('Update shift error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Export shifts (librarian only)
+router.get('/export/json', authenticateToken, requireRole(['LIBRARIAN']), async (_req, res) => {
+  try {
+    const shifts = await prisma.shift.findMany({ include: { assignments: true }, orderBy: [{ date: 'asc' }, { period: 'asc' }] });
+    const payload = shifts.map(s => ({ date: s.date, period: s.period, monitorIds: s.assignments.map(a => a.monitorId) }));
+    res.json({ shifts: payload });
+  } catch (e) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Import shifts (librarian only, upsert by date+period)
+router.post('/import/json', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
+  try {
+    const schema = z.object({ shifts: z.array(z.object({ date: z.string().min(8), period: z.number().int(), monitorIds: z.array(z.string()) }))});
+    const { shifts } = schema.parse(req.body);
+    for (const s of shifts) {
+      // upsert the shift
+      const existing = await prisma.shift.findUnique({ where: { date_period: { date: s.date, period: s.period } } });
+      if (!existing) {
+        await prisma.shift.create({ data: { date: s.date, period: s.period, assignments: { create: s.monitorIds.map(m => ({ monitorId: m })) } } });
+      } else {
+        await prisma.shiftAssignment.deleteMany({ where: { shiftId: existing.id } });
+        await prisma.shiftAssignment.createMany({ data: s.monitorIds.map(m => ({ shiftId: existing.id, monitorId: m })) });
+      }
+    }
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(400).json({ error: e.message || 'Invalid payload' });
   }
 });
 

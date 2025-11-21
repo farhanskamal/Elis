@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import { z } from 'zod';
 
 const router = express.Router();
 
@@ -42,11 +43,9 @@ router.get('/', authenticateToken, async (_req, res) => {
 // Create a laptop (librarian only)
 router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {
-    const { number, note } = req.body as { number?: number; note?: string };
     const actorId = (req as any).user.id as string;
-    if (typeof number !== 'number' || !Number.isInteger(number) || number < 1) {
-      return res.status(400).json({ error: 'Valid integer "number" is required' });
-    }
+    const schema = z.object({ number: z.number().int().min(1).max(100000), note: z.string().max(500).optional() });
+    const { number, note } = schema.parse(req.body);
     const created = await prisma.laptop.create({ data: { number, note } });
 
     // Audit log
@@ -69,8 +68,10 @@ router.post('/', authenticateToken, requireRole(['LIBRARIAN']), async (req, res)
 // Bulk create laptops (librarian only)
 router.post('/bulk', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {
-    const { count, numbers } = req.body as { count?: number; numbers?: number[] };
     const actorId = (req as any).user.id as string;
+    const schema = z.object({ count: z.number().int().min(1).max(1000).optional(), numbers: z.array(z.number().int().min(1).max(100000)).optional() });
+    const parsed = schema.parse(req.body);
+    const { count, numbers } = parsed;
     let nums: number[] = [];
     if (Array.isArray(numbers) && numbers.length > 0) {
       nums = numbers.filter(n => Number.isInteger(n) && n > 0);
@@ -112,9 +113,15 @@ router.post('/bulk', authenticateToken, requireRole(['LIBRARIAN']), async (req, 
 // Update laptop fields (librarian only)
 router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, res) => {
   try {
-    const { id } = req.params;
+    const paramsSchema = z.object({ id: z.string().min(1) });
+    const bodySchema = z.object({
+      isAccessible: z.boolean().optional(),
+      note: z.string().max(500).optional(),
+      number: z.number().int().min(1).max(100000).optional(),
+    });
+    const { id } = paramsSchema.parse(req.params);
     const actorId = (req as any).user.id as string;
-    const { isAccessible, note, number } = req.body as { isAccessible?: boolean; note?: string; number?: number };
+    const { isAccessible, note, number } = bodySchema.parse(req.body);
 
     const data: any = {};
     if (typeof isAccessible === 'boolean') data.isAccessible = isAccessible;
@@ -148,13 +155,15 @@ router.put('/:id', authenticateToken, requireRole(['LIBRARIAN']), async (req, re
 // Checkout a laptop (both roles)
 router.post('/:id/checkout', authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    const { borrowerName, ossis } = req.body as { borrowerName?: string; ossis?: string };
+    const paramsSchema = z.object({ id: z.string().min(1) });
+    const bodySchema = z.object({
+      borrowerName: z.string().min(2).max(100),
+      ossis: z.string().max(50).optional(),
+      actorMonitorId: z.string().min(1).optional(),
+    });
+    const { id } = paramsSchema.parse(req.params);
+    const { borrowerName, ossis, actorMonitorId } = bodySchema.parse(req.body);
     const userId = (req as any).user.id as string;
-
-    if (!borrowerName || typeof borrowerName !== 'string' || borrowerName.trim().length < 2) {
-      return res.status(400).json({ error: 'Borrower name is required' });
-    }
 
     const laptop = await prisma.laptop.findUnique({ where: { id } });
     if (!laptop) {
@@ -197,9 +206,11 @@ router.post('/:id/checkout', authenticateToken, async (req, res) => {
 // Checkin a laptop (both roles)
 router.post('/:id/checkin', authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
+    const paramsSchema = z.object({ id: z.string().min(1) });
+    const bodySchema = z.object({ actorMonitorId: z.string().min(1).optional() });
+    const { id } = paramsSchema.parse(req.params);
+    const { actorMonitorId } = bodySchema.parse(req.body || {});
     const userId = (req as any).user.id as string;
-
     const active = await prisma.laptopCheckout.findFirst({ where: { laptopId: id, checkedInAt: null } });
     if (!active) {
       return res.status(400).json({ error: 'No active checkout for this laptop' });
