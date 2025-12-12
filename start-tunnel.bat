@@ -9,7 +9,7 @@ echo [INFO] Remote URL: https://letstestit.me
 echo.
 
 REM Run the tunnel using the local config file
-cloudflared.exe tunnel --config tunnel-config.yml run
+cloudflared.exe tunnel --config tunnel-config.yml run 75633391-cc4c-4bd4-bea3-53780d8ccd43
 
 if %errorlevel% neq 0 (
     echo.

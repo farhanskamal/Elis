@@ -19,12 +19,12 @@ class ApiService {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
-      
+
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...config,
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
 
       // Handle rate limiting with exponential backoff
@@ -42,7 +42,7 @@ class ApiService {
             localStorage.removeItem('authToken');
             window.location.href = '/';
           }
-        } catch {}
+        } catch { }
         throw new Error('Your session has expired. Please log in again.');
       }
 
@@ -53,7 +53,7 @@ class ApiService {
         } catch {
           errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
         }
-        
+
         // Provide user-friendly error messages
         const errorMessage = this.getErrorMessage(response.status, errorData);
         throw new Error(errorMessage);
@@ -72,7 +72,7 @@ class ApiService {
         if (error.name === 'AbortError') {
           throw new Error('Request timed out. Please check your connection and try again.');
         }
-        
+
         // Retry on network errors (but not on 4xx/5xx HTTP errors)
         if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
           const delay = Math.pow(2, 4 - retries) * 1000;
@@ -114,7 +114,7 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    
+
     // Store token
     localStorage.setItem('authToken', response.token);
     return response;
@@ -429,7 +429,7 @@ class ApiService {
     const params = new URLSearchParams({ start, end }).toString();
     return this.request<CalendarEvent[]>(`/events/range?${params}`);
   }
-  async createEvent(data: Omit<CalendarEvent, 'id' | 'type' > & { description?: string }): Promise<CalendarEvent> {
+  async createEvent(data: Omit<CalendarEvent, 'id' | 'type'> & { description?: string }): Promise<CalendarEvent> {
     return this.request<CalendarEvent>('/events', {
       method: 'POST',
       body: JSON.stringify(data),
